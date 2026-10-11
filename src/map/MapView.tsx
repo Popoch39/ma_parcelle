@@ -26,6 +26,9 @@ export function MapView() {
       container: container.current,
       style: appliedStyle.current,
       ...FRANCE,
+      // The view lives in `#carte=zoom/lat/lon`: a fragment, so not a new page for search
+      // engines. The municipalities' static pages link the map open on them this way.
+      hash: 'carte',
       attributionControl: { compact: true },
     })
     // Layers cannot add anything before the first style is loaded.

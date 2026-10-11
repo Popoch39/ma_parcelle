@@ -2,13 +2,22 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <title>Ma parcelle</title>
+    <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+    <link rel="preconnect" href="https://data.geopf.fr" crossorigin />
+    <!-- Title, description, social cards and structured data: src/seo/pages.ts (HOME_META). -->
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Ma parcelle : cadastre, PLU, risques et ventes de toute parcelle</h1>
+      <p>
+        Ma parcelle est une carte : elle a besoin de JavaScript. Elle réunit gratuitement, pour toute parcelle de France,
+        cadastre, zonage du PLU, servitudes, risques, ventes du voisinage, DPE et bâtiment.
+      </p>
+      <p><a href="/communes">Parcourir le cadastre par commune</a></p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

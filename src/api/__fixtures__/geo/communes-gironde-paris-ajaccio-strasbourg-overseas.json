@@ -1,0 +1,244 @@
+[
+  {
+    "nom": "Ajaccio",
+    "code": "2A004",
+    "codesPostaux": [
+      "20000",
+      "20090",
+      "20167"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        8.7058,
+        41.9228
+      ]
+    },
+    "population": 76320,
+    "surface": 8248.58,
+    "departement": {
+      "code": "2A",
+      "nom": "Corse-du-Sud"
+    },
+    "region": {
+      "code": "94",
+      "nom": "Corse"
+    }
+  },
+  {
+    "nom": "Asques",
+    "code": "33016",
+    "codesPostaux": [
+      "33240"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        -0.4248,
+        44.9487
+      ]
+    },
+    "population": 440,
+    "surface": 623.52,
+    "departement": {
+      "code": "33",
+      "nom": "Gironde"
+    },
+    "region": {
+      "code": "75",
+      "nom": "Nouvelle-Aquitaine"
+    }
+  },
+  {
+    "nom": "Bordeaux",
+    "code": "33063",
+    "codesPostaux": [
+      "33000",
+      "33100",
+      "33200",
+      "33300",
+      "33800"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        -0.5848,
+        44.8624
+      ]
+    },
+    "population": 267991,
+    "surface": 4977.4,
+    "departement": {
+      "code": "33",
+      "nom": "Gironde"
+    },
+    "region": {
+      "code": "75",
+      "nom": "Nouvelle-Aquitaine"
+    }
+  },
+  {
+    "nom": "Mérignac",
+    "code": "33281",
+    "codesPostaux": [
+      "33700"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        -0.682,
+        44.8313
+      ]
+    },
+    "population": 78090,
+    "surface": 4796.68,
+    "departement": {
+      "code": "33",
+      "nom": "Gironde"
+    },
+    "region": {
+      "code": "75",
+      "nom": "Nouvelle-Aquitaine"
+    }
+  },
+  {
+    "nom": "Strasbourg",
+    "code": "67482",
+    "codesPostaux": [
+      "67000",
+      "67100",
+      "67200"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        7.7621,
+        48.5691
+      ]
+    },
+    "population": 293771,
+    "surface": 7820.67,
+    "departement": {
+      "code": "67",
+      "nom": "Bas-Rhin"
+    },
+    "region": {
+      "code": "44",
+      "nom": "Grand Est"
+    }
+  },
+  {
+    "nom": "Paris",
+    "code": "75056",
+    "codesPostaux": [
+      "75001",
+      "75002",
+      "75003",
+      "75004",
+      "75005",
+      "75006",
+      "75007",
+      "75008",
+      "75009",
+      "75010",
+      "75011",
+      "75012",
+      "75013",
+      "75014",
+      "75015",
+      "75016",
+      "75017",
+      "75018",
+      "75019",
+      "75020",
+      "75116"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        2.347,
+        48.8589
+      ]
+    },
+    "population": 2103778,
+    "surface": 10536.03,
+    "departement": {
+      "code": "75",
+      "nom": "Paris"
+    },
+    "region": {
+      "code": "11",
+      "nom": "Île-de-France"
+    }
+  },
+  {
+    "nom": "Les Abymes",
+    "code": "97101",
+    "codesPostaux": [
+      "97139",
+      "97142"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        -61.4967,
+        16.2678
+      ]
+    },
+    "population": 51055,
+    "surface": 7042.83,
+    "departement": {
+      "code": "971",
+      "nom": "Guadeloupe"
+    },
+    "region": {
+      "code": "01",
+      "nom": "Guadeloupe"
+    }
+  },
+  {
+    "nom": "Saint-Pierre",
+    "code": "97502",
+    "codesPostaux": [
+      "97500"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        -56.1805,
+        46.788
+      ]
+    },
+    "population": 5194,
+    "surface": 2681.04,
+    "departement": {
+      "code": "975",
+      "nom": "Saint-Pierre-et-Miquelon"
+    },
+    "region": {
+      "code": "975",
+      "nom": "Saint-Pierre-et-Miquelon"
+    }
+  },
+  {
+    "nom": "Îles Saint-Paul et Nouvelle-Amsterdam",
+    "code": "98411",
+    "codesPostaux": [],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        77.5587,
+        -37.8806
+      ]
+    },
+    "surface": 6052.39,
+    "departement": {
+      "code": "984",
+      "nom": "Terres australes et antarctiques françaises"
+    },
+    "region": {
+      "code": "984",
+      "nom": "Terres australes et antarctiques françaises"
+    }
+  }
+]

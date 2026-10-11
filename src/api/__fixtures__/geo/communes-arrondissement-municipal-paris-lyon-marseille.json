@@ -1,0 +1,98 @@
+[
+  {
+    "nom": "Marseille 1er Arrondissement",
+    "code": "13201",
+    "codesPostaux": [
+      "13001"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        5.3828,
+        43.3002
+      ]
+    },
+    "population": 37599,
+    "surface": 177.82,
+    "departement": {
+      "code": "13",
+      "nom": "Bouches-du-Rhône"
+    },
+    "region": {
+      "code": "93",
+      "nom": "Provence-Alpes-Côte d'Azur"
+    }
+  },
+  {
+    "nom": "Lyon 1er Arrondissement",
+    "code": "69381",
+    "codesPostaux": [
+      "69001"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        4.8264,
+        45.7701
+      ]
+    },
+    "population": 28717,
+    "surface": 154.37,
+    "departement": {
+      "code": "69",
+      "nom": "Rhône"
+    },
+    "region": {
+      "code": "84",
+      "nom": "Auvergne-Rhône-Alpes"
+    }
+  },
+  {
+    "nom": "Paris 1er Arrondissement",
+    "code": "75101",
+    "codesPostaux": [
+      "75001"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        2.3359,
+        48.862
+      ]
+    },
+    "population": 15114,
+    "surface": 182.73,
+    "departement": {
+      "code": "75",
+      "nom": "Paris"
+    },
+    "region": {
+      "code": "11",
+      "nom": "Île-de-France"
+    }
+  },
+  {
+    "nom": "Paris 7e Arrondissement",
+    "code": "75107",
+    "codesPostaux": [
+      "75007"
+    ],
+    "centre": {
+      "type": "Point",
+      "coordinates": [
+        2.3115,
+        48.8548
+      ]
+    },
+    "population": 48015,
+    "surface": 408.5,
+    "departement": {
+      "code": "75",
+      "nom": "Paris"
+    },
+    "region": {
+      "code": "11",
+      "nom": "Île-de-France"
+    }
+  }
+]

@@ -23,9 +23,13 @@ bun run dev          # serveur de développement
 bun run typecheck    # vérification des types
 bun run lint         # oxlint
 bun run test         # Vitest, exécution unique
-bun run build        # build de production dans dist/
+bun run build        # build de production dans dist/ (appelle geo.api.gouv.fr)
 bun run preview      # sert le build localement
 ```
+
+## Référencement
+
+La carte n'est qu'une page pour un moteur de recherche. Le build publie donc aussi une page statique par commune d'au moins 500 habitants, une par département et un annuaire, avec sitemap, robots.txt et page 404 ([ADR 0003](docs/adr/0003-pages-communes-statiques-au-build.md)). Le code est dans `src/seo/`, l'adresse du site dans `src/seo/site.ts`. Les balises de la page d'accueil (titre, description, Open Graph, données structurées) y sont aussi définies et injectées dans `index.html` au build.
 
 ## Tests
 

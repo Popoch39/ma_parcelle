@@ -1,5 +1,6 @@
 import { PrintedReport } from '@/components/print/PrintedReport'
 import { ReportPanel } from '@/components/panel/ReportPanel'
+import { DocumentTitle } from '@/components/report/DocumentTitle'
 import { SearchBar } from '@/components/search/SearchBar'
 import { LocateButton } from '@/map/controls/LocateButton'
 import { MapControls } from '@/map/controls/MapControls'
@@ -10,6 +11,9 @@ import { SelectionFraming } from '@/map/SelectionFraming'
 function App() {
   return (
     <>
+      {/* The page's heading, for screen readers and search engines: the map speaks for itself. */}
+      <h1 className="sr-only">Ma parcelle : cadastre, PLU, risques et ventes de toute parcelle</h1>
+      <DocumentTitle />
       <MapView />
       <MapLayers />
       <SelectionFraming />
