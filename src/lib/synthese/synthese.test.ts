@@ -35,6 +35,42 @@ import municipalityParis from '@/api/__fixtures__/gpu/municipality-paris-75107-b
 import prescriptionsBordeaux from '@/api/__fixtures__/gpu/prescription-surf-bordeaux-33063-kj-33.json'
 import prescriptionsParis from '@/api/__fixtures__/gpu/prescription-surf-paris-75107-bq-3.json'
 import zonesParis from '@/api/__fixtures__/gpu/zone-urba-paris-75107-bq-3.json'
+import parcelleCavite from '@/api/__fixtures__/cadastre/parcelle-aigues-juntes-09001-zb-153.json'
+import parcelleSolPollue from '@/api/__fixtures__/cadastre/parcelle-bordeaux-33063-bo-368.json'
+import parcelleSeveso from '@/api/__fixtures__/cadastre/parcelle-feyzin-69276-bb-221.json'
+import aucunResultat from '@/api/__fixtures__/georisques/aucun-resultat.json'
+import cavitesCavite from '@/api/__fixtures__/georisques/cavites-aigues-juntes-09001-zb-153.json'
+import aziAiguesJuntes from '@/api/__fixtures__/georisques/gaspar-azi-09001.json'
+import aziParis from '@/api/__fixtures__/georisques/gaspar-azi-75056.json'
+import catnatAiguesJuntes from '@/api/__fixtures__/georisques/gaspar-catnat-09001.json'
+import catnatBordeaux from '@/api/__fixtures__/georisques/gaspar-catnat-33063.json'
+import catnatParis from '@/api/__fixtures__/georisques/gaspar-catnat-75056.json'
+import risquesCavite from '@/api/__fixtures__/georisques/gaspar-risques-aigues-juntes-09001-zb-153.json'
+import risquesAiguesJuntes from '@/api/__fixtures__/georisques/gaspar-risques-aigues-juntes-09001-zc-148.json'
+import risquesBordeaux from '@/api/__fixtures__/georisques/gaspar-risques-bordeaux-33063-kj-33.json'
+import risquesParis from '@/api/__fixtures__/georisques/gaspar-risques-paris-75107-bq-3.json'
+import triBordeaux from '@/api/__fixtures__/georisques/gaspar-tri-33063.json'
+import triParis from '@/api/__fixtures__/georisques/gaspar-tri-75056.json'
+import icpeSolPollue from '@/api/__fixtures__/georisques/installations-classees-bordeaux-33063-bo-368.json'
+import icpeBordeaux from '@/api/__fixtures__/georisques/installations-classees-bordeaux-33063-kj-33.json'
+import icpeSeveso from '@/api/__fixtures__/georisques/installations-classees-feyzin-69276-bb-221.json'
+import icpeParis from '@/api/__fixtures__/georisques/installations-classees-paris-75107-bq-3.json'
+import radonAiguesJuntes from '@/api/__fixtures__/georisques/radon-09001.json'
+import radonBordeaux from '@/api/__fixtures__/georisques/radon-33063.json'
+import radonParis7e from '@/api/__fixtures__/georisques/radon-75107.json'
+import rgaCavite from '@/api/__fixtures__/georisques/rga-aigues-juntes-09001-zb-153.json'
+import rgaTerrainNu from '@/api/__fixtures__/georisques/rga-aigues-juntes-09001-zc-148.json'
+import rgaSolPollue from '@/api/__fixtures__/georisques/rga-bordeaux-33063-bo-368.json'
+import rgaBordeaux from '@/api/__fixtures__/georisques/rga-bordeaux-33063-kj-33.json'
+import rgaSeveso from '@/api/__fixtures__/georisques/rga-feyzin-69276-bb-221.json'
+import sspAucunSite from '@/api/__fixtures__/georisques/ssp-aucun-site.json'
+import sspSolPollue from '@/api/__fixtures__/georisques/ssp-bordeaux-33063-bo-368.json'
+import sspBordeaux from '@/api/__fixtures__/georisques/ssp-bordeaux-33063-kj-33.json'
+import sspSeveso from '@/api/__fixtures__/georisques/ssp-feyzin-69276-bb-221.json'
+import sspParis from '@/api/__fixtures__/georisques/ssp-paris-75107-bq-3.json'
+import sismiqueAiguesJuntes from '@/api/__fixtures__/georisques/zonage-sismique-09001.json'
+import sismiqueBordeaux from '@/api/__fixtures__/georisques/zonage-sismique-33063.json'
+import sismiqueParis7e from '@/api/__fixtures__/georisques/zonage-sismique-75107.json'
 import { assemblerSynthese, type EtatBloc } from './synthese'
 import { CONTRIBUTIONS } from './contributions'
 
@@ -51,6 +87,55 @@ function gpu(responses: Partial<Record<EndpointGpu, unknown>>): FakeRoute[] {
     'assiette-sup-s',
   ]
   return endpoints.map((endpoint) => ({ match: `/api/gpu/${endpoint}?`, body: responses[endpoint] ?? aucunObjet }))
+}
+
+type EndpointGeorisques =
+  | 'rga'
+  | 'cavites'
+  | 'mvt'
+  | 'ssp'
+  | 'installations_classees'
+  | 'gaspar/risques'
+  | 'gaspar/azi'
+  | 'gaspar/tri'
+  | 'zonage_sismique'
+  | 'radon'
+  | 'gaspar/catnat'
+
+/** Routes de Géorisques : un endpoint non fourni répond sans résultat (`rga` : corps vide). */
+function georisques(responses: Partial<Record<EndpointGeorisques, unknown>>): FakeRoute[] {
+  const endpoints: EndpointGeorisques[] = [
+    'rga',
+    'cavites',
+    'mvt',
+    'ssp',
+    'installations_classees',
+    'gaspar/risques',
+    'gaspar/azi',
+    'gaspar/tri',
+    'zonage_sismique',
+    'radon',
+    'gaspar/catnat',
+  ]
+  return endpoints.map((endpoint) => {
+    const match = `/api/v1/${endpoint}?`
+    if (responses[endpoint] !== undefined) return { match, body: responses[endpoint] }
+    if (endpoint === 'rga') return { match, text: '' }
+    return { match, body: endpoint === 'ssp' ? sspAucunSite : aucunResultat }
+  })
+}
+
+/** Géorisques à Aigues-Juntes (09001) : réponses communales communes, réponses du point au choix. */
+function aiguesJuntesGeorisques(rga: unknown, responses: Partial<Record<EndpointGeorisques, unknown>> = {}) {
+  return georisques({
+    rga,
+    'gaspar/risques': risquesAiguesJuntes,
+    'gaspar/azi': aziAiguesJuntes,
+    zonage_sismique: sismiqueAiguesJuntes,
+    radon: radonAiguesJuntes,
+    'gaspar/catnat': catnatAiguesJuntes,
+    ...responses,
+  })
 }
 
 /**
@@ -81,6 +166,18 @@ const bordeaux = [
   { match: 'bdnb/donnees', body: bdnbBordeaux },
   { match: 'bdnb/metadonnees/info', body: bdnbInfo },
   { match: 'altimetrie', body: altiBordeaux },
+  // Argiles moyennes, territoire à risque d'inondation, anciens sites et installations ordinaires
+  // autour : de la vigilance au plus, rien qui ne remonte en tête de fiche.
+  ...georisques({
+    rga: rgaBordeaux,
+    ssp: sspBordeaux,
+    installations_classees: icpeBordeaux,
+    'gaspar/risques': risquesBordeaux,
+    'gaspar/tri': triBordeaux,
+    zonage_sismique: sismiqueBordeaux,
+    radon: radonBordeaux,
+    'gaspar/catnat': catnatBordeaux,
+  }),
 ]
 
 describe('synthèse de la fiche', () => {
@@ -129,6 +226,16 @@ describe('synthèse de la fiche', () => {
       }),
       { match: 'bdnb/donnees', status: 500, body: 'Internal Server Error' },
       { match: 'bdnb/metadonnees/info', body: bdnbInfo },
+      ...georisques({
+        ssp: sspParis,
+        installations_classees: icpeParis,
+        'gaspar/risques': risquesParis,
+        'gaspar/azi': aziParis,
+        'gaspar/tri': triParis,
+        zonage_sismique: sismiqueParis7e,
+        radon: radonParis7e,
+        'gaspar/catnat': catnatParis,
+      }),
     ])
 
     const synthese = await syntheseDe(fetch, '75107000BQ0003')
@@ -162,6 +269,7 @@ describe('synthèse de la fiche', () => {
       { match: 'bdnb/donnees', body: bdnbTerrainNu },
       { match: 'bdnb/metadonnees/info', body: bdnbInfo },
       { match: 'altimetrie', body: altiTerrainNu },
+      ...aiguesJuntesGeorisques(rgaTerrainNu),
     ])
 
     const synthese = await syntheseDe(fetch, '09001000ZC0148')
@@ -178,8 +286,82 @@ describe('synthèse de la fiche', () => {
           detail:
             'La commune n’a ni PLU ni carte communale : les règles générales du code de l’urbanisme s’appliquent, et limitent les constructions nouvelles hors des parties déjà urbanisées.',
         },
+        {
+          id: 'risque-argiles',
+          libelle: 'Retrait-gonflement des argiles',
+          valeur: 'Exposition forte',
+          niveau: 'alerte',
+          detail:
+            'Les sols argileux gonflent et se rétractent au fil des pluies et des sécheresses, ce qui peut fissurer les bâtiments : une étude de sol est exigée avant de vendre un terrain à bâtir ou d’y construire une maison.',
+        },
       ],
     })
+  })
+
+  it('fait remonter chaque risque en alerte, comme une cavité sur la parcelle, mais pas ceux en vigilance', async () => {
+    const fetch = fakeFetch([
+      { match: 'cadastre/parcelle', body: parcelleCavite },
+      ...aiguesJuntesGeorisques(rgaCavite, { cavites: cavitesCavite, 'gaspar/risques': risquesCavite }),
+    ])
+
+    const synthese = await syntheseDe(fetch, '09001000ZB0153')
+
+    // La sismicité modérée de la commune (vigilance) reste dans le bloc Risques.
+    expect(synthese.faits.filter(({ id }) => id.startsWith('risque-'))).toEqual([
+      {
+        id: 'risque-argiles',
+        libelle: 'Retrait-gonflement des argiles',
+        valeur: 'Exposition forte',
+        niveau: 'alerte',
+        detail:
+          'Les sols argileux gonflent et se rétractent au fil des pluies et des sécheresses, ce qui peut fissurer les bâtiments : une étude de sol est exigée avant de vendre un terrain à bâtir ou d’y construire une maison.',
+      },
+      {
+        id: 'risque-cavites',
+        libelle: 'Cavités souterraines',
+        valeur: '1 recensée à moins de 500 m',
+        niveau: 'alerte',
+        detail: 'Une cavité est recensée sur la parcelle ou à moins de 100 m : le sol peut s’y affaisser ou s’effondrer.',
+      },
+    ])
+  })
+
+  it('met en alerte un sol pollué tout proche et un établissement Seveso seuil haut à moins d’1 km', async () => {
+    const solPollue = await syntheseDe(
+      fakeFetch([
+        { match: 'cadastre/parcelle', body: parcelleSolPollue },
+        ...georisques({ rga: rgaSolPollue, ssp: sspSolPollue, installations_classees: icpeSolPollue }),
+      ]),
+      '33063000BO0368',
+    )
+    const seveso = await syntheseDe(
+      fakeFetch([
+        { match: 'cadastre/parcelle', body: parcelleSeveso },
+        ...georisques({ rga: rgaSeveso, ssp: sspSeveso, installations_classees: icpeSeveso }),
+      ]),
+      '69276000BB0221',
+    )
+
+    expect(solPollue.faits.filter(({ id }) => id.startsWith('risque-'))).toEqual([
+      {
+        id: 'risque-sols-pollues',
+        libelle: 'Sols pollués',
+        valeur: '4 sites à moins de 500 m',
+        niveau: 'alerte',
+        detail:
+          'Un sol pollué est recensé sur la parcelle ou à moins de 100 m : y construire peut exiger une étude de sol et des précautions d’usage.',
+      },
+    ])
+    expect(seveso.faits.filter(({ id }) => id.startsWith('risque-'))).toEqual([
+      {
+        id: 'risque-installations-classees',
+        libelle: 'Installations classées',
+        valeur: '5 à moins de 1 km',
+        niveau: 'alerte',
+        detail:
+          'Un établissement Seveso seuil haut, où un accident majeur est possible, est recensé à moins de 1 km : un plan de prévention des risques technologiques peut encadrer les constructions alentour.',
+      },
+    ])
   })
 
   it('met en alerte une zone naturelle, et nomme le monument dont la parcelle est aux abords', async () => {

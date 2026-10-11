@@ -1,5 +1,6 @@
 import { syntheseBatiment } from './batiment'
 import { syntheseCadastre } from './cadastre'
+import { syntheseRisques } from './risques'
 import type { ContributionSynthese } from './synthese'
 import { syntheseUrbanisme } from './urbanisme'
 
@@ -8,4 +9,9 @@ import { syntheseUrbanisme } from './urbanisme'
  * Ajouter un bloc = un fichier `lib/synthese/<bloc>.ts` qui exporte sa `contribution()`, et
  * une ligne ici.
  */
-export const CONTRIBUTIONS: readonly ContributionSynthese[] = [syntheseCadastre, syntheseUrbanisme, syntheseBatiment]
+export const CONTRIBUTIONS: readonly ContributionSynthese[] = [
+  syntheseCadastre,
+  syntheseUrbanisme,
+  syntheseRisques,
+  syntheseBatiment,
+]
