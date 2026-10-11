@@ -1,6 +1,5 @@
+import { BlocQueryState } from '@/components/common/BlocQueryState'
 import { Section } from '@/components/common/Section'
-import { SectionError } from '@/components/common/SectionError'
-import { SectionSkeleton } from '@/components/common/SectionSkeleton'
 import { SourceLink } from '@/components/common/SourceLink'
 import type { BlocProps } from '@/components/fiche/blocs'
 import { useUrbanisme } from '@/queries/urbanisme'
@@ -23,18 +22,16 @@ export function UrbanismeSection({ idu }: BlocProps) {
       title="Urbanisme"
       source={<SourceLink href={GEOPORTAIL_URBANISME} label="Géoportail de l’urbanisme" />}
     >
-      {urbanisme.isPending ? (
-        <SectionSkeleton rows={6} />
-      ) : urbanisme.isError ? (
-        <SectionError error={urbanisme.error} onRetry={() => urbanisme.refetch()} />
-      ) : (
-        <div className="flex flex-col gap-4">
-          {urbanisme.data.perimetreAbf && <PerimetreAbfAlert perimetreAbf={urbanisme.data.perimetreAbf} />}
-          <ReglementationView reglementation={urbanisme.data.reglementation} />
-          <PrescriptionList prescriptions={urbanisme.data.prescriptions} />
-          <ServitudeList servitudes={urbanisme.data.servitudes} onSurvol={survolerServitude} />
-        </div>
-      )}
+      <BlocQueryState query={urbanisme} rows={6}>
+        {(bloc) => (
+          <div className="flex flex-col gap-4">
+            {bloc.perimetreAbf && <PerimetreAbfAlert perimetreAbf={bloc.perimetreAbf} />}
+            <ReglementationView reglementation={bloc.reglementation} />
+            <PrescriptionList prescriptions={bloc.prescriptions} />
+            <ServitudeList servitudes={bloc.servitudes} onSurvol={survolerServitude} />
+          </div>
+        )}
+      </BlocQueryState>
     </Section>
   )
 }

@@ -1,6 +1,5 @@
+import { BlocQueryState } from '@/components/common/BlocQueryState'
 import { Section } from '@/components/common/Section'
-import { SectionError } from '@/components/common/SectionError'
-import { SectionSkeleton } from '@/components/common/SectionSkeleton'
 import { SourceLink } from '@/components/common/SourceLink'
 import type { BlocProps } from '@/components/fiche/blocs'
 import { useRisques } from '@/queries/risques'
@@ -16,13 +15,9 @@ export function RisquesSection({ idu }: BlocProps) {
         <SourceLink href="https://www.georisques.gouv.fr/" label="Géorisques (ministère de la Transition écologique, BRGM)" />
       }
     >
-      {risques.isPending ? (
-        <SectionSkeleton rows={8} />
-      ) : risques.isError ? (
-        <SectionError error={risques.error} onRetry={() => risques.refetch()} />
-      ) : (
-        <RisqueList risques={risques.data.risques} />
-      )}
+      <BlocQueryState query={risques} rows={8}>
+        {(bloc) => <RisqueList risques={bloc.risques} />}
+      </BlocQueryState>
     </Section>
   )
 }

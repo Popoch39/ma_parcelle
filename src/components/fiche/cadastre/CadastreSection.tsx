@@ -1,6 +1,5 @@
+import { BlocQueryState } from '@/components/common/BlocQueryState'
 import { Section } from '@/components/common/Section'
-import { SectionError } from '@/components/common/SectionError'
-import { SectionSkeleton } from '@/components/common/SectionSkeleton'
 import { SourceLink } from '@/components/common/SourceLink'
 import type { BlocProps } from '@/components/fiche/blocs'
 import { useParcelle } from '@/queries/parcelle'
@@ -14,13 +13,9 @@ export function CadastreSection({ idu }: BlocProps) {
       title="Cadastre"
       source={<SourceLink href="https://www.cadastre.gouv.fr/" label="Plan cadastral (DGFiP, IGN)" />}
     >
-      {parcelle.isPending ? (
-        <SectionSkeleton rows={7} />
-      ) : parcelle.isError ? (
-        <SectionError error={parcelle.error} onRetry={() => parcelle.refetch()} />
-      ) : (
-        <CadastreFacts parcelle={parcelle.data} />
-      )}
+      <BlocQueryState query={parcelle} rows={7}>
+        {(data) => <CadastreFacts parcelle={data} />}
+      </BlocQueryState>
     </Section>
   )
 }

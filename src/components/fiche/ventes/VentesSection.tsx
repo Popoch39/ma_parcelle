@@ -1,7 +1,6 @@
 import type { SourceVentesId } from '@/api/ventes/source'
+import { BlocQueryState } from '@/components/common/BlocQueryState'
 import { Section } from '@/components/common/Section'
-import { SectionError } from '@/components/common/SectionError'
-import { SectionSkeleton } from '@/components/common/SectionSkeleton'
 import { SourceLink } from '@/components/common/SourceLink'
 import type { BlocProps } from '@/components/fiche/blocs'
 import type { Vente } from '@/lib/ventes'
@@ -47,32 +46,30 @@ export function VentesSection({ idu }: BlocProps) {
         <SourceLink href={source.href} label={source.label} date={ventes.data && `depuis ${ventes.data.depuis}`} />
       }
     >
-      {ventes.isPending ? (
-        <SectionSkeleton rows={6} />
-      ) : ventes.isError ? (
-        <SectionError error={ventes.error} onRetry={() => ventes.refetch()} />
-      ) : (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <h3 className="text-xs font-medium text-muted-foreground">Prix médian au m² bâti</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <PrixMedianStat type="appartement" median={ventes.data.medianes.appartement} />
-              <PrixMedianStat type="maison" median={ventes.data.medianes.maison} />
+      <BlocQueryState query={ventes} rows={6}>
+        {(bloc) => (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-xs font-medium text-muted-foreground">Prix médian au m² bâti</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <PrixMedianStat type="appartement" median={bloc.medianes.appartement} />
+                <PrixMedianStat type="maison" median={bloc.medianes.maison} />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Ventes d’un seul logement, dépendances comprises, à moins de {bloc.rayon} m de la parcelle depuis{' '}
+                {bloc.depuis} : un repère du voisinage, pas une estimation de la parcelle.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Ventes d’un seul logement, dépendances comprises, à moins de {ventes.data.rayon} m de la parcelle depuis{' '}
-              {ventes.data.depuis} : un repère du voisinage, pas une estimation de la parcelle.
-            </p>
+            <VenteList
+              key={idu}
+              ventes={bloc.ventes}
+              survolee={venteSurvolee}
+              onSurvol={survolerVente}
+              onOuvrir={montrerVente}
+            />
           </div>
-          <VenteList
-            key={idu}
-            ventes={ventes.data.ventes}
-            survolee={venteSurvolee}
-            onSurvol={survolerVente}
-            onOuvrir={montrerVente}
-          />
-        </div>
-      )}
+        )}
+      </BlocQueryState>
     </Section>
   )
 }

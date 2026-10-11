@@ -1,6 +1,5 @@
+import { BlocQueryState } from '@/components/common/BlocQueryState'
 import { Section } from '@/components/common/Section'
-import { SectionError } from '@/components/common/SectionError'
-import { SectionSkeleton } from '@/components/common/SectionSkeleton'
 import { SourceLink } from '@/components/common/SourceLink'
 import type { BlocProps } from '@/components/fiche/blocs'
 import { useBatiment } from '@/queries/batiment'
@@ -23,13 +22,9 @@ export function BatimentSection({ idu }: BlocProps) {
         </div>
       }
     >
-      {batiment.isPending ? (
-        <SectionSkeleton rows={4} />
-      ) : batiment.isError ? (
-        <SectionError error={batiment.error} onRetry={() => batiment.refetch()} />
-      ) : (
-        <BatimentFacts bloc={batiment.data} />
-      )}
+      <BlocQueryState query={batiment} rows={4}>
+        {(bloc) => <BatimentFacts bloc={bloc} />}
+      </BlocQueryState>
     </Section>
   )
 }
