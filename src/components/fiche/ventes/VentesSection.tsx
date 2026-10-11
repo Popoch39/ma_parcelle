@@ -3,11 +3,10 @@ import { BlocQueryState } from '@/components/common/BlocQueryState'
 import { Section } from '@/components/common/Section'
 import { SourceLink } from '@/components/common/SourceLink'
 import type { BlocProps } from '@/components/fiche/blocs'
-import type { Vente } from '@/lib/ventes'
 import { useVentes } from '@/queries/ventes'
 import { useMapStore } from '@/stores/map-store'
-import { useUiStore } from '@/stores/ui-store'
-import { PrixMedianStat } from './PrixMedianStat'
+import { montrerVente } from '@/stores/montrer-vente'
+import { PrixMedians } from './PrixMedians'
 import { VenteList } from './VenteList'
 
 const SOURCES: Record<SourceVentesId, { href: string; label: string }> = {
@@ -26,18 +25,6 @@ export function VentesSection({ idu }: BlocProps) {
   const ventes = useVentes(idu)
   const venteSurvolee = useMapStore((state) => state.venteSurvolee)
   const survolerVente = useMapStore((state) => state.survolerVente)
-  const ouvrirVente = useMapStore((state) => state.ouvrirVente)
-  const setCalqueActif = useMapStore((state) => state.setCalqueActif)
-  const montrerPoint = useMapStore((state) => state.montrerPoint)
-  const sheetCran = useUiStore((state) => state.sheetCran)
-  const setSheetCran = useUiStore((state) => state.setSheetCran)
-  const montrerVente = (vente: Vente) => {
-    setCalqueActif('ventes', true)
-    ouvrirVente(vente.id)
-    // Sur mobile, la fiche en plein écran cache toute la carte.
-    if (sheetCran === 'plein-ecran') setSheetCran('mi-ecran')
-    montrerPoint(vente.position)
-  }
   const source = SOURCES[ventes.data?.source ?? 'cerema']
   return (
     <Section
@@ -49,17 +36,7 @@ export function VentesSection({ idu }: BlocProps) {
       <BlocQueryState query={ventes} rows={6}>
         {(bloc) => (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <h3 className="text-xs font-medium text-muted-foreground">Prix médian au m² bâti</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <PrixMedianStat type="appartement" median={bloc.medianes.appartement} />
-                <PrixMedianStat type="maison" median={bloc.medianes.maison} />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Ventes d’un seul logement, dépendances comprises, à moins de {bloc.rayon} m de la parcelle depuis{' '}
-                {bloc.depuis} : un repère du voisinage, pas une estimation de la parcelle.
-              </p>
-            </div>
+            <PrixMedians medianes={bloc.medianes} rayon={bloc.rayon} depuis={bloc.depuis} />
             <VenteList
               key={idu}
               ventes={bloc.ventes}
