@@ -9,6 +9,7 @@ import { PerimetreAbfAlert } from './PerimetreAbfAlert'
 import { PrescriptionList } from './PrescriptionList'
 import { ReglementationView } from './ReglementationView'
 import { ServitudeList } from './ServitudeList'
+import { GEOPORTAIL_URBANISME } from './source'
 
 /**
  * Bloc Urbanisme : charge ce que le document d'urbanisme et les servitudes disent de la
@@ -20,7 +21,7 @@ export function UrbanismeSection({ idu }: BlocProps) {
   return (
     <Section
       title="Urbanisme"
-      source={<SourceLink href="https://www.geoportail-urbanisme.gouv.fr/" label="Géoportail de l’urbanisme" />}
+      source={<SourceLink href={GEOPORTAIL_URBANISME} label="Géoportail de l’urbanisme" />}
     >
       {urbanisme.isPending ? (
         <SectionSkeleton rows={6} />

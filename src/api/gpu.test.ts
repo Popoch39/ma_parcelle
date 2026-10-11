@@ -41,8 +41,11 @@ type Endpoint =
   | 'assiette-sup-l'
   | 'assiette-sup-p'
 
-/** Faux fetch de l'API Carto GPU : un endpoint non fourni répond comme sans objet. */
-function gpu(responses: Partial<Record<Endpoint, unknown>>) {
+/**
+ * Faux fetch de l'API Carto GPU : un endpoint non fourni répond comme sans objet, un endpoint
+ * en échec répond comme l'API quand sa passerelle abandonne une requête trop lente.
+ */
+function gpu(responses: Partial<Record<Endpoint, unknown>>, echecs: Endpoint[] = []) {
   const endpoints: Endpoint[] = [
     'zone-urba',
     'secteur-cc',
@@ -54,7 +57,11 @@ function gpu(responses: Partial<Record<Endpoint, unknown>>) {
     'assiette-sup-p',
   ]
   return fakeFetch(
-    endpoints.map((endpoint) => ({ match: `/api/gpu/${endpoint}?`, body: responses[endpoint] ?? aucunObjet })),
+    endpoints.map((endpoint) =>
+      echecs.includes(endpoint)
+        ? { match: `/api/gpu/${endpoint}?`, status: 504, body: 'Gateway Time-out' }
+        : { match: `/api/gpu/${endpoint}?`, body: responses[endpoint] ?? aucunObjet },
+    ),
   )
 }
 
@@ -246,7 +253,7 @@ describe('loadUrbanisme', () => {
     const urbanisme = await loadUrbanisme(gpu(paris), parcelle)
 
     // Le monument lui-même et les voies du 7e ne font que toucher le bord de la parcelle.
-    expect(urbanisme.servitudes.map(({ code, categorie, nom }) => ({ code, categorie, nom }))).toEqual([
+    expect(urbanisme.servitudes?.map(({ code, categorie, nom }) => ({ code, categorie, nom }))).toEqual([
       { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel de Jarnac (ancien)' },
       { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel Brongniart' },
       { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Église Saint-François-Xavier' },
@@ -322,6 +329,41 @@ describe('loadUrbanisme', () => {
         geometrie: servitudesLineairesIleDOlonne.features[0].geometry,
       },
     ])
+  })
+
+  describe('quand un service du Géoportail de l’urbanisme ne répond pas', () => {
+    it('garde la zone et les servitudes, et dit les prescriptions indisponibles', async () => {
+      const parcelle = await parcelleDe(parcelleParis)
+
+      const urbanisme = await loadUrbanisme(gpu(paris, ['prescription-surf']), parcelle)
+
+      expect(urbanisme.prescriptions).toBeNull()
+      expect(urbanisme.reglementation).toMatchObject({ regime: 'document', zones: [{ code: 'UG' }] })
+      expect(urbanisme.servitudes).toHaveLength(12)
+      expect(urbanisme.perimetreAbf?.monuments).toHaveLength(11)
+    })
+
+    it('garde la zone et les prescriptions, et dit les servitudes indisponibles, périmètre ABF compris', async () => {
+      const parcelle = await parcelleDe(parcelleParis)
+
+      const urbanisme = await loadUrbanisme(gpu(paris, ['assiette-sup-l']), parcelle)
+
+      expect(urbanisme.servitudes).toBeNull()
+      expect(urbanisme.perimetreAbf).toBeNull()
+      expect(urbanisme.prescriptions).toHaveLength(3)
+      expect(urbanisme.reglementation).toMatchObject({ regime: 'document', zones: [{ code: 'UG' }] })
+    })
+
+    it.each<Endpoint>(['zone-urba', 'secteur-cc', 'document', 'municipality'])(
+      'échoue sans « %s », sans lequel la règle applicable à la parcelle reste inconnue',
+      async (endpoint) => {
+        const parcelle = await parcelleDe(parcelleParis)
+
+        const urbanisme = loadUrbanisme(gpu(paris, [endpoint]), parcelle)
+
+        await expect(urbanisme).rejects.toMatchObject({ name: 'ApiError', kind: 'http', status: 504 })
+      },
+    )
   })
 
   it('interroge zone, secteur, document, commune, prescriptions et servitudes par la géométrie de la parcelle, jamais les actes de servitude', async () => {

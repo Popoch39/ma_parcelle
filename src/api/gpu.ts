@@ -81,12 +81,15 @@ export interface PerimetreAbf {
   monuments: string[]
 }
 
-/** Modèle du bloc Urbanisme. */
+/**
+ * Modèle du bloc Urbanisme. Sans la règle applicable, le bloc échoue ; prescriptions et
+ * servitudes, elles, sont null quand leur service n'a pas répondu (indisponibles).
+ */
 export interface Urbanisme {
   reglementation: Reglementation
-  prescriptions: Prescription[]
-  servitudes: Servitude[]
-  /** null hors des abords de tout monument historique. */
+  prescriptions: Prescription[] | null
+  servitudes: Servitude[] | null
+  /** null hors des abords de tout monument historique, ou quand les servitudes sont indisponibles. */
   perimetreAbf: PerimetreAbf | null
 }
 
@@ -208,18 +211,26 @@ export async function loadUrbanisme(
       signal,
       timeoutMs,
     })
-  const [zonesPlu, secteurs, documents, communes, prescriptions, surfaces, lignes, points] = await Promise.all([
-    get<ZoneUrbaProperties>('zone-urba'),
-    get<SecteurCcProperties>('secteur-cc'),
-    get<DocumentProperties>('document'),
-    get<MunicipalityProperties>('municipality'),
+  // Sans zone, document ni commune, on ne sait pas quelle règle s'applique : le bloc échoue.
+  // Prescriptions et servitudes complètent la règle : chacune peut manquer seule.
+  const [reglement, prescriptions, servitudes] = await Promise.allSettled([
+    Promise.all([
+      get<ZoneUrbaProperties>('zone-urba'),
+      get<SecteurCcProperties>('secteur-cc'),
+      get<DocumentProperties>('document'),
+      get<MunicipalityProperties>('municipality'),
+    ]),
     // Chaque prescription arrive avec toute sa géométrie, parfois une ville entière : plus
     // d'un mégaoctet à Paris, plusieurs secondes même sur une bonne connexion.
     get<PrescriptionProperties>('prescription-surf', 30_000),
-    get<ServitudeProperties>('assiette-sup-s'),
-    get<ServitudeProperties, MultiLineString>('assiette-sup-l'),
-    get<ServitudeProperties, MultiPoint>('assiette-sup-p'),
+    Promise.all([
+      get<ServitudeProperties>('assiette-sup-s'),
+      get<ServitudeProperties, MultiLineString>('assiette-sup-l'),
+      get<ServitudeProperties, MultiPoint>('assiette-sup-p'),
+    ]),
   ])
+  if (reglement.status === 'rejected') throw reglement.reason
+  const [zonesPlu, secteurs, documents, communes] = reglement.value
   const partDe = mesureCouverture(parcelle.geometrie)
   const zones = [
     ...zonesPlu.features.map(({ geometry, properties }) =>
@@ -234,19 +245,27 @@ export async function loadUrbanisme(
     .sort((a, b) => b.part - a.part)
   return {
     reglementation: reglementationDe(parcelle, zones, documents, communes),
-    prescriptions: prescriptionsDe(prescriptions, partDe),
-    ...servitudesDe([
-      ...surfaces.features.filter(({ geometry }) => partDe(geometry) >= PART_SIGNIFICATIVE),
-      // Une ligne ou un point n'a pas de surface à mesurer : l'intersection faite par l'API fait foi.
-      ...lignes.features,
-      ...points.features,
-    ]),
+    prescriptions: prescriptions.status === 'fulfilled' ? prescriptionsDe(prescriptions.value, partDe) : null,
+    ...(servitudes.status === 'fulfilled'
+      ? servitudesDe(servitudes.value, partDe)
+      : { servitudes: null, perimetreAbf: null }),
   }
 }
 
 function servitudesDe(
-  touchees: Array<{ geometry: EmpriseServitude; properties: ServitudeProperties }>,
+  [surfaces, lignes, points]: [
+    FeatureCollection<ServitudeProperties>,
+    FeatureCollection<ServitudeProperties, MultiLineString>,
+    FeatureCollection<ServitudeProperties, MultiPoint>,
+  ],
+  partDe: (geometrie: MultiPolygon) => number,
 ): Pick<Urbanisme, 'servitudes' | 'perimetreAbf'> {
+  const touchees: Array<{ geometry: EmpriseServitude; properties: ServitudeProperties }> = [
+    ...surfaces.features.filter(({ geometry }) => partDe(geometry) >= PART_SIGNIFICATIVE),
+    // Une ligne ou un point n'a pas de surface à mesurer : l'intersection faite par l'API fait foi.
+    ...lignes.features,
+    ...points.features,
+  ]
   const abords = touchees.filter(({ properties }) => estAbordsMonument(properties))
   const monuments = abords.flatMap(({ properties }) => (properties.nomsuplitt ? [reEncode(properties.nomsuplitt)] : []))
   return {

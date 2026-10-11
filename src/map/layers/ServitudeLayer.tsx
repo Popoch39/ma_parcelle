@@ -25,7 +25,7 @@ export function ServitudeLayer() {
 function ServitudeOverlay({ idu, id }: { idu: string; id: string }) {
   const couleur = COULEUR_SERVITUDE[useColorScheme()]
   const { data } = useUrbanisme(idu)
-  const servitude = data?.servitudes.find((candidate) => candidate.id === id)
+  const servitude = data?.servitudes?.find((candidate) => candidate.id === id)
   const collection: FeatureCollection<EmpriseServitude> = {
     type: 'FeatureCollection',
     features: servitude ? [{ type: 'Feature', geometry: servitude.geometrie, properties: {} }] : [],
