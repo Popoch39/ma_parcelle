@@ -2,6 +2,7 @@ import { BasemapSwitcher } from './BasemapSwitcher'
 import { LayerToggles } from './LayerToggles'
 import { ThemeToggle } from './ThemeToggle'
 import { VentesLegend } from './VentesLegend'
+import { ZoomControl } from './ZoomControl'
 
 /**
  * Contrôles de la carte, empilés en haut à droite (sous la barre de recherche sur mobile, où
@@ -13,6 +14,7 @@ export function MapControls() {
       <BasemapSwitcher />
       <LayerToggles />
       <ThemeToggle />
+      <ZoomControl />
       <VentesLegend />
     </div>
   )
