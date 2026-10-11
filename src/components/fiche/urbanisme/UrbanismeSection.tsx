@@ -16,6 +16,7 @@ import { GEOPORTAIL_URBANISME } from './source'
  */
 export function UrbanismeSection({ idu }: BlocProps) {
   const urbanisme = useUrbanisme(idu)
+  const servitudeSurvolee = useMapStore((state) => state.servitudeSurvolee)
   const survolerServitude = useMapStore((state) => state.survolerServitude)
   return (
     <Section
@@ -29,7 +30,7 @@ export function UrbanismeSection({ idu }: BlocProps) {
             {bloc.perimetreAbf && <PerimetreAbfAlert perimetreAbf={bloc.perimetreAbf} />}
             <ReglementationView reglementation={bloc.reglementation} />
             <PrescriptionList prescriptions={bloc.prescriptions} />
-            <ServitudeList servitudes={bloc.servitudes} onSurvol={survolerServitude} />
+            <ServitudeList servitudes={bloc.servitudes} survolee={servitudeSurvolee} onSurvol={survolerServitude} />
           </div>
         )}
       </BlocQueryState>
