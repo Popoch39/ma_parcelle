@@ -48,6 +48,20 @@ export function squareAround(point: LonLat, demiCote: number): Polygon {
   }
 }
 
+/** Point dans un polygone ou un multipolygone, par la règle pair-impair : les trous sont exclus d'office. */
+export function containsPoint(geometrie: Polygon | MultiPolygon, { lon, lat }: LonLat): boolean {
+  const anneaux = geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()
+  let dedans = false
+  for (const anneau of anneaux) {
+    for (let k = 1; k < anneau.length; k++) {
+      const [x1, y1] = anneau[k - 1]
+      const [x2, y2] = anneau[k]
+      if (y1 > lat !== y2 > lat && lon < ((x2 - x1) * (lat - y1)) / (y2 - y1) + x1) dedans = !dedans
+    }
+  }
+  return dedans
+}
+
 /** Rectangle englobant d'un polygone ou d'un multipolygone. */
 export function empriseOf(geometrie: Polygon | MultiPolygon): Emprise {
   const anneaux = geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()
