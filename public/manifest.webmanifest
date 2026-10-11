@@ -1,0 +1,17 @@
+{
+  "name": "Ma parcelle",
+  "short_name": "Ma parcelle",
+  "description": "Toute parcelle de France en une fiche gratuite : cadastre, zonage du PLU, servitudes, risques, ventes DVF, DPE et bâtiment.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "/icon-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}
