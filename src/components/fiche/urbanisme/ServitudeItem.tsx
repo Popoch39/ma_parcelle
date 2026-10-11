@@ -1,5 +1,5 @@
+import { cn } from 'cn'
 import type { Servitude } from '@/api/gpu'
-import { cn } from '@/lib/utils'
 
 interface ServitudeItemProps {
   servitude: Servitude

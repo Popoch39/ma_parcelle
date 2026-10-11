@@ -1,5 +1,5 @@
+import { cn } from 'cn'
 import type { Vente } from '@/lib/ventes'
-import { cn } from '@/lib/utils'
 import { VenteDetails } from './VenteDetails'
 
 interface VenteRowProps {

@@ -1,3 +1,4 @@
+import { cn } from 'cn'
 import {
   useEffect,
   useLayoutEffect,
@@ -8,7 +9,6 @@ import {
   type ReactNode,
 } from 'react'
 import { CRANS, cranAuRelachement, cranVoisin, PART_MI_ECRAN, type Cran } from '@/lib/bottom-sheet'
-import { cn } from '@/lib/utils'
 import { useUiStore } from '@/stores/ui-store'
 
 interface BottomSheetProps {

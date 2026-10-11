@@ -1,6 +1,6 @@
+import { cn } from 'cn'
 import { CircleAlert, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
 import type { NiveauAlerte } from '@/lib/synthese/synthese'
-import { cn } from '@/lib/utils'
 
 const NIVEAUX: Record<NiveauAlerte, { label: string; Icon: LucideIcon; className: string }> = {
   information: { label: 'Information', Icon: Info, className: 'border-information/30 bg-information/10 text-information' },

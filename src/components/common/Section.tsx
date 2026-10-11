@@ -1,7 +1,7 @@
+import { cn } from 'cn'
 import { ChevronDown } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 import type { BlocId } from '@/components/fiche/blocs'
-import { cn } from '@/lib/utils'
 import { useBlocReplie, useUiStore } from '@/stores/ui-store'
 
 interface SectionProps {

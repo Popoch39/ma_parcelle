@@ -1,5 +1,5 @@
+import { cn } from 'cn'
 import type { Etiquette } from '@/api/ademe'
-import { cn } from '@/lib/utils'
 import { COULEURS_ETIQUETTE, NOM_ETIQUETTE, type TypeEtiquette } from './etiquettes'
 
 interface EtiquetteBadgeProps {
