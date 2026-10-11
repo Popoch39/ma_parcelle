@@ -11,6 +11,12 @@ export interface LonLat {
 
 const METRES_PAR_DEGRE = 111_320
 
+/** Distance en mètres entre deux points. Approximation plane, juste à l'échelle d'un quartier. */
+export function distanceBetween(a: LonLat, b: LonLat): number {
+  const kx = METRES_PAR_DEGRE * Math.cos((a.lat * Math.PI) / 180)
+  return Math.hypot((b.lon - a.lon) * kx, (b.lat - a.lat) * METRES_PAR_DEGRE)
+}
+
 /**
  * Distance en mètres d'un point au bord le plus proche d'un polygone. Approximation plane,
  * juste à l'échelle d'une rue ou d'un quartier.
@@ -46,6 +52,31 @@ export function squareAround(point: LonLat, demiCote: number): Polygon {
     type: 'Polygon',
     coordinates: [[[ouest, sud], [est, sud], [est, nord], [ouest, nord], [ouest, sud]]],
   }
+}
+
+/** Cercle de `rayon` mètres autour d'un point, approché par un polygone de `sommets` côtés. */
+export function circleAround(point: LonLat, rayon: number, sommets = 32): Polygon {
+  const dLat = rayon / METRES_PAR_DEGRE
+  const dLon = dLat / Math.cos((point.lat * Math.PI) / 180)
+  const anneau = Array.from({ length: sommets }, (_, k) => {
+    const angle = (2 * Math.PI * k) / sommets
+    return [point.lon + dLon * Math.cos(angle), point.lat + dLat * Math.sin(angle)]
+  })
+  return { type: 'Polygon', coordinates: [[...anneau, anneau[0]]] }
+}
+
+/** Point dans un polygone ou un multipolygone, par la règle pair-impair : les trous sont exclus d'office. */
+export function containsPoint(geometrie: Polygon | MultiPolygon, { lon, lat }: LonLat): boolean {
+  const anneaux = geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()
+  let dedans = false
+  for (const anneau of anneaux) {
+    for (let k = 1; k < anneau.length; k++) {
+      const [x1, y1] = anneau[k - 1]
+      const [x2, y2] = anneau[k]
+      if (y1 > lat !== y2 > lat && lon < ((x2 - x1) * (lat - y1)) / (y2 - y1) + x1) dedans = !dedans
+    }
+  }
+  return dedans
 }
 
 /** Rectangle englobant d'un polygone ou d'un multipolygone. */
@@ -97,25 +128,6 @@ export function centroideOf(geometrie: Polygon | MultiPolygon): [number, number]
     })
   }
   return [x0 + mx / (3 * aire), y0 + my / (3 * aire)]
-}
-
-/** Vrai si le point est dans le polygone, hors de ses trous. */
-export function containsPoint(geometrie: Polygon | MultiPolygon, point: LonLat): boolean {
-  const polygones = geometrie.type === 'Polygon' ? [geometrie.coordinates] : geometrie.coordinates
-  return polygones.some(
-    ([contour, ...trous]) => dansAnneau(contour, point) && !trous.some((trou) => dansAnneau(trou, point)),
-  )
-}
-
-/** Lancer de rayon vers l'est : le point est dedans s'il croise le bord un nombre impair de fois. */
-function dansAnneau(anneau: number[][], { lon, lat }: LonLat): boolean {
-  let dedans = false
-  for (let i = 0, j = anneau.length - 1; i < anneau.length; j = i++) {
-    const [xi, yi] = anneau[i]
-    const [xj, yj] = anneau[j]
-    if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) dedans = !dedans
-  }
-  return dedans
 }
 
 /** Distance en mètres d'un point à un polygone : nulle quand il est dedans. */

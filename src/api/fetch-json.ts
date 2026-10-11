@@ -33,26 +33,36 @@ export class ApiError extends Error {
  * GET d'une URL d'API publique et lecture de son corps JSON.
  * `T` décrit la forme brute attendue de la réponse ; elle n'est pas validée à l'exécution.
  */
-export function fetchJson<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T> {
-  return fetchBody(fetch, url, options, (response) => response.json())
+export async function fetchJson<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T> {
+  return fetchBody(fetch, url, (response) => response.json(), options)
+}
+
+/** GET d'une URL d'API publique et lecture de son corps en texte (CSV…), mêmes erreurs que `fetchJson`. */
+export async function fetchText(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<string> {
+  return fetchBody(fetch, url, (response) => response.text(), options)
 }
 
 /**
  * Comme `fetchJson`, pour une API qui répond 200 avec un corps vide quand elle n'a rien à
  * dire (Géorisques `rga`) : renvoie alors `null`.
  */
-export function fetchJsonOuVide<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T | null> {
-  return fetchBody(fetch, url, options, async (response) => {
-    const text = await response.text()
-    return text.trim() === '' ? null : JSON.parse(text)
-  })
+export async function fetchJsonOuVide<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T | null> {
+  return fetchBody(
+    fetch,
+    url,
+    async (response) => {
+      const text = await response.text()
+      return text.trim() === '' ? null : JSON.parse(text)
+    },
+    options,
+  )
 }
 
 async function fetchBody<T>(
   fetch: Fetch,
   url: string,
-  { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: FetchJsonOptions,
   read: (response: Response) => Promise<T>,
+  { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: FetchJsonOptions,
 ): Promise<T> {
   const timeout = AbortSignal.timeout(timeoutMs)
   // L'annulation interrompt aussi bien l'attente des en-têtes que la lecture du corps.

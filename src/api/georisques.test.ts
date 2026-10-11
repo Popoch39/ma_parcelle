@@ -138,7 +138,7 @@ describe('loadRisques', () => {
 
   it('n’affirme rien des argiles quand Géorisques n’a pas de donnée à l’emplacement', async () => {
     // Réponse réelle à Paris : 200 avec un corps vide.
-    const fetch = fakeFetch([{ match: '/api/v1/rga?', text: '' }])
+    const fetch = fakeFetch([{ match: '/api/v1/rga?', body: '' }])
 
     const { risques } = await loadRisques(fetch, await parcelle('75107000BQ0003', parcelleParis))
 
