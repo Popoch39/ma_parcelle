@@ -1,7 +1,7 @@
 import { LoaderCircle, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { imprimerFiche } from '@/stores/imprimer-fiche'
 import { useImpressionEnCours } from '@/stores/ui-store'
-import { imprimerFiche } from './imprimer-fiche'
 
 /** Ouvre l'impression du navigateur (papier ou PDF) une fois la fiche préparée. */
 export function ImprimerButton({ idu }: { idu: string }) {
