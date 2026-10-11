@@ -1,0 +1,228 @@
+{
+  "type": "FeatureCollection",
+  "count": 2489,
+  "next": "http://apidf-preprod.cerema.fr/dvf_opendata/geomutations/?anneemut_min=2021&in_bbox=-0.580041%2C44.835945%2C-0.567372%2C44.844928&page=4&page_size=500",
+  "previous": "http://apidf-preprod.cerema.fr/dvf_opendata/geomutations/?anneemut_min=2021&in_bbox=-0.580041%2C44.835945%2C-0.567372%2C44.844928&page=2&page_size=500",
+  "features": [
+    {
+      "id": 11611252,
+      "type": "Feature",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -0.570883,
+                44.840629
+              ],
+              [
+                -0.570843,
+                44.840719
+              ],
+              [
+                -0.570951,
+                44.840746
+              ],
+              [
+                -0.570981,
+                44.84065
+              ],
+              [
+                -0.570883,
+                44.840629
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "idmutinvar": "5f84f43bda56978639530dca65ac4644",
+        "idopendata": "5f84f43bda56978639530dca65ac4644",
+        "datemut": "2022-06-15",
+        "anneemut": 2022,
+        "coddep": "33",
+        "libnatmut": "Vente",
+        "vefa": false,
+        "valeurfonc": "287400.00",
+        "nbcomm": 1,
+        "l_codinsee": [
+          "33063"
+        ],
+        "nbpar": 1,
+        "l_idpar": [
+          "33063000KM0124"
+        ],
+        "nbparmut": 0,
+        "l_idparmut": [],
+        "sterr": "0.00",
+        "nbvolmut": 0,
+        "nblocmut": 1,
+        "l_idlocmut": [
+          "330630001459534_0"
+        ],
+        "sbati": "80.00",
+        "codtypbien": "121",
+        "libtypbien": "UN APPARTEMENT"
+      }
+    },
+    {
+      "id": 12469702,
+      "type": "Feature",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -0.571033,
+                44.836849
+              ],
+              [
+                -0.571057,
+                44.836852
+              ],
+              [
+                -0.571081,
+                44.836855
+              ],
+              [
+                -0.571101,
+                44.836775
+              ],
+              [
+                -0.571053,
+                44.836762
+              ],
+              [
+                -0.571031,
+                44.83684
+              ],
+              [
+                -0.571029,
+                44.836849
+              ],
+              [
+                -0.571033,
+                44.836849
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "idmutinvar": "8a7795329f8f69713552f73090a8494b",
+        "idopendata": "8a7795329f8f69713552f73090a8494b",
+        "datemut": "2023-04-03",
+        "anneemut": 2023,
+        "coddep": "33",
+        "libnatmut": "Vente",
+        "vefa": false,
+        "valeurfonc": "720000.00",
+        "nbcomm": 1,
+        "l_codinsee": [
+          "33063"
+        ],
+        "nbpar": 1,
+        "l_idpar": [
+          "33063000HD0127"
+        ],
+        "nbparmut": 1,
+        "l_idparmut": [
+          "33063000HD0127"
+        ],
+        "sterr": "39.00",
+        "nbvolmut": 0,
+        "nblocmut": 1,
+        "l_idlocmut": [
+          "330630001201412_0"
+        ],
+        "sbati": "80.00",
+        "codtypbien": "111",
+        "libtypbien": "UNE MAISON"
+      }
+    },
+    {
+      "id": 12924151,
+      "type": "Feature",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -0.5721,
+                44.83993
+              ],
+              [
+                -0.572101,
+                44.839928
+              ],
+              [
+                -0.57216,
+                44.839938
+              ],
+              [
+                -0.572189,
+                44.839875
+              ],
+              [
+                -0.572125,
+                44.839861
+              ],
+              [
+                -0.572125,
+                44.83986
+              ],
+              [
+                -0.572068,
+                44.839847
+              ],
+              [
+                -0.572069,
+                44.839924
+              ],
+              [
+                -0.572094,
+                44.839929
+              ],
+              [
+                -0.5721,
+                44.83993
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "idmutinvar": "edfcf833ac478e104d57acf128ca8fe0",
+        "idopendata": "edfcf833ac478e104d57acf128ca8fe0",
+        "datemut": "2023-03-21",
+        "anneemut": 2023,
+        "coddep": "33",
+        "libnatmut": "Vente",
+        "vefa": false,
+        "valeurfonc": "850000.00",
+        "nbcomm": 1,
+        "l_codinsee": [
+          "33063"
+        ],
+        "nbpar": 1,
+        "l_idpar": [
+          "33063000KJ0061"
+        ],
+        "nbparmut": 1,
+        "l_idparmut": [
+          "33063000KJ0061"
+        ],
+        "sterr": "68.00",
+        "nbvolmut": 0,
+        "nblocmut": 0,
+        "l_idlocmut": [],
+        "sbati": "0.00",
+        "codtypbien": "229",
+        "libtypbien": "TERRAIN ARTIFICIALISE MIXTE"
+      }
+    }
+  ]
+}

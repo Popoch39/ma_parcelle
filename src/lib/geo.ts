@@ -11,6 +11,12 @@ export interface LonLat {
 
 const METRES_PAR_DEGRE = 111_320
 
+/** Distance en mètres entre deux points. Approximation plane, juste à l'échelle d'un quartier. */
+export function distanceBetween(a: LonLat, b: LonLat): number {
+  const kx = METRES_PAR_DEGRE * Math.cos((a.lat * Math.PI) / 180)
+  return Math.hypot((b.lon - a.lon) * kx, (b.lat - a.lat) * METRES_PAR_DEGRE)
+}
+
 /**
  * Distance en mètres d'un point au bord le plus proche d'un polygone. Approximation plane,
  * juste à l'échelle d'une rue ou d'un quartier.
