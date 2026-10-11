@@ -51,15 +51,16 @@ export const LIBELLES_TYPE: Record<TypeBien, string> = {
   indetermine: 'Bien non décrit',
 }
 
+/** Motif d'exclusion en clair, à la suite de « Exclue de la médiane : ». */
 export const LIBELLES_EXCLUSION: Record<MotifExclusion, string> = {
-  'vente-groupee': 'Vente groupée de plusieurs logements',
-  'local-professionnel': 'Comprend un local professionnel',
-  dependance: 'Dépendance seule',
-  terrain: 'Terrain',
-  'bien-indetermine': 'Bien non décrit',
-  'hors-marche': 'Échange ou expropriation : prix hors marché',
-  'prix-inconnu': 'Prix non publié',
-  'surface-inconnue': 'Surface bâtie non publiée',
+  'vente-groupee': 'vente groupée de plusieurs logements',
+  'local-professionnel': 'comprend un local professionnel',
+  dependance: 'dépendance seule',
+  terrain: 'terrain',
+  'bien-indetermine': 'bien non décrit',
+  'hors-marche': 'échange ou expropriation, prix hors marché',
+  'prix-inconnu': 'prix non publié',
+  'surface-inconnue': 'surface bâtie non publiée',
 }
 
 /** Une vente telle qu'une source la décrit, une fois normalisée. */
