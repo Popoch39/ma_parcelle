@@ -37,6 +37,9 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
+    --color-information: var(--information);
+    --color-vigilance: var(--vigilance);
+    --color-alerte: var(--alerte);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -81,6 +84,15 @@
     --accent: light-dark(oklch(0.97 0 0), oklch(0.269 0 0));
     --accent-foreground: light-dark(oklch(0.205 0 0), oklch(0.985 0 0));
     --destructive: light-dark(oklch(0.577 0.245 27.325), oklch(0.704 0.191 22.216));
+    /*
+     * Niveaux d'alerte d'un fait (information, vigilance, alerte) : couleur du texte, de l'icône
+     * et de la bordure ; le fond en est une teinte légère (`bg-vigilance/10`). Assez foncés en
+     * clair et assez clairs en sombre pour un petit texte lisible : contraste ≥ 5:1 sur leur
+     * teinte posée sur la carte, en clair comme en sombre.
+     */
+    --information: light-dark(oklch(0.5 0.134 242.749), oklch(0.828 0.111 230.318));
+    --vigilance: light-dark(oklch(0.52 0.15 48), oklch(0.828 0.189 84.429));
+    --alerte: light-dark(oklch(0.505 0.213 27.518), oklch(0.704 0.191 22.216));
     --border: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 10%));
     --input: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 15%));
     --ring: var(--primary);

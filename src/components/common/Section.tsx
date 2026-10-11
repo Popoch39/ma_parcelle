@@ -2,8 +2,11 @@ import { useId, type ReactNode } from 'react'
 
 interface SectionProps {
   title: string
-  /** Lien vers la source officielle, affiché quel que soit l'état du bloc (`SourceLink`). */
-  source: ReactNode
+  /**
+   * Lien vers la source officielle, affiché quel que soit l'état du bloc (`SourceLink`). Seule
+   * la synthèse, qui cite les blocs, n'en a pas.
+   */
+  source?: ReactNode
   children: ReactNode
 }
 
@@ -16,7 +19,7 @@ export function Section({ title, source, children }: SectionProps) {
         {title}
       </h2>
       {children}
-      <footer className="mt-4 border-t pt-3 text-xs text-muted-foreground">{source}</footer>
+      {source && <footer className="mt-4 border-t pt-3 text-xs text-muted-foreground">{source}</footer>}
     </section>
   )
 }
