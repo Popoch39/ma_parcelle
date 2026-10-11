@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/*
+ * Hors couche, la feuille MapLibre battrait tous les utilitaires : son `.maplibregl-map
+ * { position: relative }` annulait le `fixed inset-0` du conteneur, réduit à 0 px de haut.
+ */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(base);
 
 /*
  * Le thème suit prefers-color-scheme sans JavaScript (pas de flash au chargement) :

@@ -1,9 +1,13 @@
-import 'maplibre-gl/dist/maplibre-gl.css'
-import { Map as MapLibreMap } from 'maplibre-gl'
+import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useRef } from 'react'
 import { useMapStore } from '@/stores/map-store'
 import { useColorScheme } from '@/stores/ui-store'
 import { basemapStyle } from './basemaps'
+
+// MapLibre cherche son worker à côté de son propre module : une fois bundlé par Vite (chunk en
+// build, pré-bundle en dev), ce fichier n'existe plus là. Vite l'émet donc lui-même.
+setWorkerUrl(workerUrl)
 
 // France métropolitaine entière à l'ouverture, quand l'URL ne désigne aucune parcelle.
 const FRANCE = { center: [2.5, 46.6] as [number, number], zoom: 5 }
