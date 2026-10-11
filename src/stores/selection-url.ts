@@ -7,6 +7,13 @@ function iduFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get(PARAM)?.trim().toUpperCase() || null
 }
 
+/** Adresse qui ouvre la fiche de cette parcelle, sur la même app que `base` (par défaut, la page courante). */
+export function urlDeLaFiche(idu: string, base = window.location.href): string {
+  const url = new URL('?', base)
+  url.searchParams.set(PARAM, idu)
+  return url.href
+}
+
 /**
  * Synchronise le store sélection avec `?parcelle=<IDU>`, sans router : l'URL ouvre la fiche,
  * chaque nouvelle sélection crée une entrée d'historique, précédent et suivant la rejouent.

@@ -10,6 +10,14 @@ describe('colorSchemeOf', () => {
   ] as const)('le thème %s, avec un système en %s, s’affiche en %s',(theme, system, expected) => {
     expect(colorSchemeOf(theme, system)).toBe(expected)
   })
+
+  it.each([
+    ['auto', 'dark'],
+    ['sombre', 'light'],
+    ['sombre', 'dark'],
+  ] as const)('s’affiche en clair pendant une impression, quel que soit le thème (%s, système en %s)', (theme, system) => {
+    expect(colorSchemeOf(theme, system, { impression: true })).toBe('light')
+  })
 })
 
 describe('persistedTheme', () => {

@@ -5,9 +5,12 @@ export type Theme = 'auto' | 'clair' | 'sombre'
 
 const THEMES: readonly Theme[] = ['auto', 'clair', 'sombre']
 
-/** Thème effectivement affiché pour un choix de l'utilisateur et un thème système. */
-export function colorSchemeOf(theme: Theme, system: ColorScheme): ColorScheme {
-  if (theme === 'clair') return 'light'
+/**
+ * Thème effectivement affiché pour un choix de l'utilisateur et un thème système. Une fiche
+ * s'imprime toujours en clair : un fond sombre sur papier est illisible et vide l'encre.
+ */
+export function colorSchemeOf(theme: Theme, system: ColorScheme, { impression = false } = {}): ColorScheme {
+  if (impression || theme === 'clair') return 'light'
   if (theme === 'sombre') return 'dark'
   return system
 }
