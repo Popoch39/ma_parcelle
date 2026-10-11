@@ -8,7 +8,10 @@ import type { Fetch } from '@/api/fetch-json'
 export interface FakeRoute {
   /** Sous-chaîne ou motif de l'URL demandée. La première route qui correspond répond. */
   match: string | RegExp
-  body: unknown
+  /** Corps JSON, ignoré quand `text` est fourni. */
+  body?: unknown
+  /** Corps brut, pour une réponse qui n'est pas du JSON (corps vide, CSV…). */
+  text?: string
   status?: number
 }
 
@@ -28,6 +31,7 @@ export function fakeFetch(routes: FakeRoute[]): FakeFetch {
     )
     // Une URL inattendue doit faire échouer le test bruyamment, comme une panne réseau.
     if (!route) throw new TypeError(`Aucune fixture pour ${url}`)
+    if (route.text !== undefined) return new Response(route.text, { status: route.status ?? 200 })
     return new Response(JSON.stringify(route.body), {
       status: route.status ?? 200,
       headers: { 'content-type': 'application/json' },
