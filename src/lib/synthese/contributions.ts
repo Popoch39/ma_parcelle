@@ -1,5 +1,6 @@
 import { syntheseBatiment } from './batiment'
 import { syntheseCadastre } from './cadastre'
+import { syntheseDpe } from './dpe'
 import type { ContributionSynthese } from './synthese'
 import { syntheseUrbanisme } from './urbanisme'
 import { syntheseVentes } from './ventes'
@@ -14,4 +15,5 @@ export const CONTRIBUTIONS: readonly ContributionSynthese[] = [
   syntheseUrbanisme,
   syntheseVentes,
   syntheseBatiment,
+  syntheseDpe,
 ]

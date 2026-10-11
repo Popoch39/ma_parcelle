@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import { BatimentSection } from './batiment/BatimentSection'
 import { CadastreSection } from './cadastre/CadastreSection'
+import { DpeSection } from './dpe/DpeSection'
 import { UrbanismeSection } from './urbanisme/UrbanismeSection'
 import { VentesSection } from './ventes/VentesSection'
 
@@ -18,4 +19,5 @@ export const BLOCS: ReadonlyArray<{ id: string; Section: ComponentType<BlocProps
   { id: 'urbanisme', Section: UrbanismeSection },
   { id: 'ventes', Section: VentesSection },
   { id: 'batiment', Section: BatimentSection },
+  { id: 'dpe', Section: DpeSection },
 ]
