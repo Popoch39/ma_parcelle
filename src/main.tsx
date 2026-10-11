@@ -5,9 +5,10 @@ import './index.css'
 import App from './App.tsx'
 import { queryClient } from './queries/query-client'
 import { syncSelectionWithUrl } from './stores/selection-url'
-import { followSystemColorScheme } from './stores/ui-store'
+import { applyThemeToDocument, followSystemColorScheme } from './stores/ui-store'
 
 followSystemColorScheme()
+applyThemeToDocument()
 syncSelectionWithUrl()
 
 createRoot(document.getElementById('root')!).render(

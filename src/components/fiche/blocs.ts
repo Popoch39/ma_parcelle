@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import { BatimentSection } from './batiment/BatimentSection'
 import { CadastreSection } from './cadastre/CadastreSection'
 
 /** Ce que la fiche passe à chaque bloc : la parcelle sélectionnée, rien d'autre. */
@@ -12,4 +13,5 @@ export interface BlocProps {
  */
 export const BLOCS: ReadonlyArray<{ id: string; Section: ComponentType<BlocProps> }> = [
   { id: 'cadastre', Section: CadastreSection },
+  { id: 'batiment', Section: BatimentSection },
 ]

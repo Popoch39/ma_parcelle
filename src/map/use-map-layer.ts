@@ -11,6 +11,27 @@ export interface MapLayer {
   sources: Record<string, SourceSpecification>
   /** Couches empilées dans cet ordre, au-dessus de celles déjà posées. */
   layers: LayerSpecification[]
+  /**
+   * Pose les couches sous toutes les autres plutôt qu'au-dessus : pour un fond posé comme un
+   * calque (la photo aérienne), qui peut être monté après les surcouches.
+   */
+  beneath?: boolean
+  /**
+   * Pose les couches sous cette couche quand elle est sur la carte : pour une surcouche montée
+   * à la demande qui doit rester sous les parcelles et la sélection.
+   */
+  below?: string
+}
+
+/** Couche avant laquelle `addLayer` doit insérer, ou `undefined` pour poser au-dessus de tout. */
+export function insertionPoint(
+  order: string[],
+  { beneath, below }: Pick<MapLayer, 'beneath' | 'below'>,
+): string | undefined {
+  if (beneath) return order[0]
+  // MapLibre refuse une couche de référence absente : on pose alors au-dessus.
+  if (below && order.includes(below)) return below
+  return undefined
 }
 
 /**
@@ -18,7 +39,7 @@ export interface MapLayer {
  * chaque changement de fond. Un changement de `sources` ou `layers` (ex. un autre filtre)
  * retire puis repose le calque.
  */
-export function useMapLayer({ sources, layers }: MapLayer): void {
+export function useMapLayer({ sources, layers, beneath = false, below }: MapLayer): void {
   const map = useMapStore((state) => state.map)
 
   useEffect(() => {
@@ -27,8 +48,9 @@ export function useMapLayer({ sources, layers }: MapLayer): void {
       for (const [id, source] of Object.entries(sources)) {
         if (!map.getSource(id)) map.addSource(id, source)
       }
+      const beforeId = insertionPoint(map.getLayersOrder(), { beneath, below })
       for (const layer of layers) {
-        if (!map.getLayer(layer.id)) map.addLayer(layer)
+        if (!map.getLayer(layer.id)) map.addLayer(layer, beforeId)
       }
     }
     if (isStyleReady(map)) apply()
@@ -49,7 +71,7 @@ export function useMapLayer({ sources, layers }: MapLayer): void {
         if (!otherSources.has(id) && map.getSource(id)) map.removeSource(id)
       }
     }
-  }, [map, sources, layers])
+  }, [map, sources, layers, beneath, below])
 }
 
 // L'API de style lève tant qu'un fond se charge et après `map.remove()` ; `getStyle()` est le
