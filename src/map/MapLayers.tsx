@@ -2,6 +2,7 @@ import { useMapStore } from '@/stores/map-store'
 import { OrthoLayer } from './layers/OrthoLayer'
 import { PciLayer } from './layers/PciLayer'
 import { SelectionLayer } from './layers/SelectionLayer'
+import { ServitudeLayer } from './layers/ServitudeLayer'
 import { ZonageWmsLayer } from './layers/ZonageWmsLayer'
 import { ZonePluLayer } from './layers/ZonePluLayer'
 
@@ -17,6 +18,7 @@ export function MapLayers() {
       {basemap === 'ortho' && <OrthoLayer />}
       {calquesActifs.includes('zonage') && <ZonageWmsLayer />}
       <ZonePluLayer />
+      <ServitudeLayer />
       <PciLayer />
       <SelectionLayer />
     </>

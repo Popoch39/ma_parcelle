@@ -14,6 +14,9 @@ interface MapState {
   /** Calques affichés au-dessus du fond, sans ordre. */
   calquesActifs: Calque[]
   setCalqueActif: (calque: Calque, actif: boolean) => void
+  /** Servitude survolée dans la fiche (son `id`), dont la carte montre l'emprise. */
+  servitudeSurvolee: string | null
+  survolerServitude: (id: string | null) => void
   /** Cadre la carte sur une emprise, en laissant la place au panneau de la fiche. */
   fitEmprise: (emprise: Emprise) => void
   /** Amène la carte sur un point, assez près pour y toucher une parcelle. */
@@ -33,6 +36,8 @@ export const useMapStore = create<MapState>()((set, get) => ({
     set(({ calquesActifs }) => ({
       calquesActifs: [...calquesActifs.filter((id) => id !== calque), ...(actif ? [calque] : [])],
     })),
+  servitudeSurvolee: null,
+  survolerServitude: (servitudeSurvolee) => set({ servitudeSurvolee }),
   fitEmprise: (emprise) => get().map?.fitBounds(emprise, { padding: fichePadding(), maxZoom: ZOOM_PARCELLE }),
   centerOn: ({ lon, lat }) => {
     const map = get().map
