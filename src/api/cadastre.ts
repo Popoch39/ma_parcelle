@@ -2,6 +2,7 @@ import type { MultiPolygon } from 'geojson'
 import { empriseOf, type Emprise } from '@/lib/geo'
 import { arrondissementOf, formatReferenceCadastrale, parseIdu } from '@/lib/idu'
 import { fetchJson, type Fetch } from './fetch-json'
+import type { LoadOptions } from './loader'
 
 const API_CARTO_PARCELLE = 'https://apicarto.ign.fr/api/cadastre/parcelle'
 
@@ -59,12 +60,11 @@ interface ParcelleApiCarto {
   }>
 }
 
-/** Chargeur du bloc Cadastre : la parcelle désignée par son IDU. */
-export async function loadParcelle(
-  fetch: Fetch,
-  idu: string,
-  { signal }: { signal?: AbortSignal } = {},
-): Promise<Parcelle> {
+/**
+ * Chargeur du bloc Cadastre : la parcelle désignée par son IDU. Les autres blocs partent de
+ * la parcelle qu'il renvoie (voir `BlocLoader`).
+ */
+export async function loadParcelle(fetch: Fetch, idu: string, { signal }: LoadOptions = {}): Promise<Parcelle> {
   const parts = parseIdu(idu)
   if (!parts) throw new ParcelleError('idu-invalide', idu)
   const arrondissement = arrondissementOf(parts.codeInsee)

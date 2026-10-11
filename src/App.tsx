@@ -1,8 +1,16 @@
+import { FichePanel } from '@/components/panel/FichePanel'
+import { MapLayers } from '@/map/MapLayers'
+import { MapView } from '@/map/MapView'
+import { SelectionFraming } from '@/map/SelectionFraming'
+
 function App() {
   return (
-    <main className="flex min-h-svh items-center justify-center">
-      <h1 className="text-lg font-medium">Ma parcelle</h1>
-    </main>
+    <>
+      <MapView />
+      <MapLayers />
+      <SelectionFraming />
+      <FichePanel />
+    </>
   )
 }
 
