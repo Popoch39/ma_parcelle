@@ -8,6 +8,9 @@ import type { BlocLoader } from './loader'
 const API = 'https://www.georisques.gouv.fr/api/v1'
 const SITE = 'https://www.georisques.gouv.fr'
 
+// Tout en une page : les réponses sont paginées par 10, et leur lien `next` pointe vers un hôte
+// interne de Géorisques, injoignable.
+const UNE_PAGE = 'page_size=1000'
 /** Rayon de recherche autour du centroïde de la parcelle, en mètres. */
 const RAYON = 500
 /** Rayon des installations classées, plus large : un accident industriel porte plus loin. */
@@ -197,7 +200,7 @@ const SOURCES: SourceRisque[] = [
     portee: 'emplacement',
     lien: `${SITE}/consulter-les-dossiers-thematiques/dossier-expert-sur-les-cavites-souterraines`,
     lire: async ({ parcelle, latlon, get }) =>
-      cavites(parcelle, await get<Enveloppe<CaviteGeorisques>>(`cavites?${latlon}&rayon=${RAYON}&page_size=1000`)),
+      cavites(parcelle, await get<Enveloppe<CaviteGeorisques>>(`cavites?${latlon}&rayon=${RAYON}&${UNE_PAGE}`)),
   },
   {
     id: 'mouvements-terrain',
@@ -207,7 +210,7 @@ const SOURCES: SourceRisque[] = [
     lire: async ({ parcelle, latlon, get }) =>
       mouvementsTerrain(
         parcelle,
-        await get<Enveloppe<MouvementTerrainGeorisques>>(`mvt?${latlon}&rayon=${RAYON}&page_size=1000`),
+        await get<Enveloppe<MouvementTerrainGeorisques>>(`mvt?${latlon}&rayon=${RAYON}&${UNE_PAGE}`),
       ),
   },
   {
@@ -233,7 +236,7 @@ const SOURCES: SourceRisque[] = [
       installationsClassees(
         parcelle,
         await get<Enveloppe<InstallationClasseeGeorisques>>(
-          `installations_classees?${latlon}&rayon=${RAYON_INSTALLATIONS}&page_size=1000`,
+          `installations_classees?${latlon}&rayon=${RAYON_INSTALLATIONS}&${UNE_PAGE}`,
         ),
       ),
   },
@@ -282,9 +285,10 @@ const SOURCES: SourceRisque[] = [
     libelle: 'Catastrophes naturelles',
     portee: 'commune',
     lien: `${SITE}/le-dispositif-dindemnisation-des-catastrophes-naturelles`,
-    // Tout en une page : le lien `next` des réponses pointe vers un hôte interne de Géorisques.
     lire: async ({ parcelle, get }) =>
-      catnat(await get<Enveloppe<CatnatGeorisques>>(`gaspar/catnat?code_insee=${parcelle.commune.codeInsee}&page_size=1000`)),
+      catnat(
+        await get<Enveloppe<CatnatGeorisques>>(`gaspar/catnat?code_insee=${parcelle.commune.codeInsee}&${UNE_PAGE}`),
+      ),
   },
 ]
 
@@ -298,8 +302,8 @@ export const loadRisques: BlocLoader<RisquesBloc> = async (fetch, parcelle, { si
     parcelle,
     latlon,
     get: (chemin) => fetchJson(fetch, `${API}/${chemin}`, { signal }),
-    ssp: () => (ssp ??= fetchJson(fetch, `${API}/ssp?${latlon}&rayon=${RAYON}&page_size=1000`, { signal })),
     getOuVide: (chemin) => fetchJsonOuVide(fetch, `${API}/${chemin}`, { signal }),
+    ssp: () => (ssp ??= fetchJson(fetch, `${API}/ssp?${latlon}&rayon=${RAYON}&${UNE_PAGE}`, { signal })),
   }
   // Chaque risque échoue seul ; mais si tous échouent, Géorisques est en panne (ou l'appel
   // annulé) : le bloc échoue avec la première erreur, et propose de réessayer.
@@ -567,8 +571,8 @@ const SISMICITE: Record<string, { nom: string; niveau: NiveauAlerte; detail: str
 }
 
 function sismicite(zonages: ZonageSismiqueGeorisques[]): Lecture {
-  const code = zonages[0]?.code_zone
-  const zone = code === undefined ? undefined : SISMICITE[code]
+  const code = zonages[0]?.code_zone ?? ''
+  const zone = SISMICITE[code]
   if (!zone) return aucuneDonnee(null)
   return { niveau: zone.niveau, valeur: `Zone ${code} · ${zone.nom}`, detail: zone.detail, elements: [] }
 }
