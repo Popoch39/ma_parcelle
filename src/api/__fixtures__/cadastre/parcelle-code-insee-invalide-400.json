@@ -1,0 +1,1 @@
+{"code":400,"message":{"code_insee":{"type":"field","value":"abc","msg":"INSEE code must have 5 characters","path":"code_insee","location":"query"}}}
