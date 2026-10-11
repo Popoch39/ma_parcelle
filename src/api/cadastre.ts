@@ -67,21 +67,52 @@ interface ParcelleApiCarto {
 export async function loadParcelle(fetch: Fetch, idu: string, { signal }: LoadOptions = {}): Promise<Parcelle> {
   const parts = parseIdu(idu)
   if (!parts) throw new ParcelleError('idu-invalide', idu)
-  const arrondissement = arrondissementOf(parts.codeInsee)
+  const parcelles = await findParcelles(fetch, referenceParams(parts), { signal })
+  const parcelle = parcelles.find((candidate) => candidate.idu === idu)
+  if (!parcelle) throw new ParcelleError('introuvable', idu)
+  return parcelle
+}
+
+/**
+ * Paramètres API Carto d'une référence cadastrale. Une commune absorbée peut réutiliser la
+ * même section et le même numéro : sans préfixe, toutes celles de la commune répondent.
+ */
+export function referenceParams({ codeInsee, prefixe, section, numero }: {
+  codeInsee: string
+  prefixe: string | null
+  section: string
+  numero: string
+}): URLSearchParams {
+  const arrondissement = arrondissementOf(codeInsee)
   const params = new URLSearchParams(
     arrondissement
       ? { code_insee: arrondissement.codeCommune, code_arr: arrondissement.codeArr }
-      : { code_insee: parts.codeInsee },
+      : { code_insee: codeInsee },
   )
-  // Une commune absorbée peut réutiliser la même section et le même numéro : le préfixe
-  // les distingue.
-  params.set('com_abs', parts.prefixe)
-  params.set('section', parts.section)
-  params.set('numero', parts.numero)
+  if (prefixe) params.set('com_abs', prefixe)
+  params.set('section', section)
+  params.set('numero', numero)
+  return params
+}
+
+/**
+ * Parcelles qu'API Carto renvoie pour ces paramètres : par référence (`code_insee`,
+ * `code_arr`, `com_abs`, `section`, `numero`) ou par géométrie (`geom`).
+ */
+export async function findParcelles(
+  fetch: Fetch,
+  params: URLSearchParams,
+  { signal }: LoadOptions = {},
+): Promise<Parcelle[]> {
   const body = await fetchJson<ParcelleApiCarto>(fetch, `${API_CARTO_PARCELLE}?${params}`, { signal })
-  const feature = body.features.find(({ properties }) => properties.idu === idu)
-  if (!feature) throw new ParcelleError('introuvable', idu)
+  return body.features.map(parcelleOf)
+}
+
+function parcelleOf(feature: ParcelleApiCarto['features'][number]): Parcelle {
   const { properties } = feature
+  const parts = parseIdu(properties.idu)
+  if (!parts) throw new ParcelleError('idu-invalide', properties.idu)
+  const arrondissement = arrondissementOf(parts.codeInsee)
   return {
     idu: properties.idu,
     referenceCadastrale: formatReferenceCadastrale(parts),

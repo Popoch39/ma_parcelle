@@ -3,6 +3,7 @@ import { useMapLayer } from '@/map/use-map-layer'
 import { useUrbanisme } from '@/queries/urbanisme'
 import { useSelectionStore } from '@/stores/selection-store'
 import { useColorScheme, type ColorScheme } from '@/stores/ui-store'
+import { PARCELLES_HIT_LAYER } from './pci-source'
 
 const SOURCE_ID = 'zone-plu'
 
@@ -29,6 +30,8 @@ function ZonePluOverlay({ idu }: { idu: string }) {
 
   useMapLayer({
     sources: { [SOURCE_ID]: { type: 'geojson', data: collection } },
+    // Reposé à chaque sélection : sans cela, il passerait au-dessus de la parcelle.
+    below: PARCELLES_HIT_LAYER,
     layers: [
       {
         id: 'zone-plu-aplat',

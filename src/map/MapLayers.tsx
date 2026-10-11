@@ -1,5 +1,8 @@
+import { useMapStore } from '@/stores/map-store'
+import { OrthoLayer } from './layers/OrthoLayer'
 import { PciLayer } from './layers/PciLayer'
 import { SelectionLayer } from './layers/SelectionLayer'
+import { ZonageWmsLayer } from './layers/ZonageWmsLayer'
 import { ZonePluLayer } from './layers/ZonePluLayer'
 
 /**
@@ -7,13 +10,15 @@ import { ZonePluLayer } from './layers/ZonePluLayer'
  * calque optionnel revient à le monter.
  */
 export function MapLayers() {
+  const basemap = useMapStore((state) => state.basemap)
+  const calquesActifs = useMapStore((state) => state.calquesActifs)
   return (
     <>
+      {basemap === 'ortho' && <OrthoLayer />}
+      {calquesActifs.includes('zonage') && <ZonageWmsLayer />}
+      <ZonePluLayer />
       <PciLayer />
       <SelectionLayer />
-      {/* Reposé à chaque nouvelle sélection, il passe de toute façon au-dessus : aplat et
-          contour restent assez légers pour laisser voir la parcelle. */}
-      <ZonePluLayer />
     </>
   )
 }
