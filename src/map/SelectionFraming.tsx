@@ -1,24 +1,24 @@
 import { useEffect } from 'react'
-import { useParcelle } from '@/queries/parcelle'
+import { useParcel } from '@/queries/parcel'
 import { useMapStore } from '@/stores/map-store'
 import { useSelectionStore } from '@/stores/selection-store'
 
-/** Amène la carte sur la parcelle quand la sélection le demande (URL, historique, recherche). */
+/** Brings the map to the parcel when the selection asks for it (URL, history, search). */
 export function SelectionFraming() {
   const idu = useSelectionStore((state) => state.idu)
   const reframe = useSelectionStore((state) => state.reframe)
   if (!idu || !reframe) return null
-  return <FrameParcelle key={idu} idu={idu} />
+  return <FrameParcel key={idu} idu={idu} />
 }
 
-function FrameParcelle({ idu }: { idu: string }) {
-  const emprise = useParcelle(idu).data?.emprise
+function FrameParcel({ idu }: { idu: string }) {
+  const bbox = useParcel(idu).data?.bbox
   const map = useMapStore((state) => state.map)
-  const fitEmprise = useMapStore((state) => state.fitEmprise)
+  const fitBBox = useMapStore((state) => state.fitBBox)
 
   useEffect(() => {
-    if (map && emprise) fitEmprise(emprise)
-  }, [map, emprise, fitEmprise])
+    if (map && bbox) fitBBox(bbox)
+  }, [map, bbox, fitBBox])
 
   return null
 }

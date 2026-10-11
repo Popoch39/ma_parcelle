@@ -1,28 +1,28 @@
 import { useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import type { Adresse } from '@/api/geocodage'
+import type { Address } from '@/api/geocoding'
 import { errorMessage } from '@/components/common/error-message'
-import { useAdresseSuggestions, useResolveSearch, type SearchTarget } from '@/queries/recherche'
+import { useAddressSuggestions, useResolveSearch, type SearchTarget } from '@/queries/search'
 import { useSelectionStore } from '@/stores/selection-store'
 import { SearchInput } from './SearchInput'
 import { SuggestionList } from './SuggestionList'
 
 /**
- * Barre de recherche unifiée : assemble le champ et ses suggestions d'adresse, et ouvre la
- * fiche de la parcelle trouvée en recadrant la carte dessus.
+ * Unified search bar: assembles the field and its address suggestions, and opens the
+ * report of the parcel found while reframing the map on it.
  */
 export function SearchBar() {
   const listId = useId()
   const errorId = useId()
   const input = useRef<HTMLInputElement>(null)
-  const [saisie, setSaisie] = useState('')
+  const [text, setText] = useState('')
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
-  const suggestions = useAdresseSuggestions(saisie).data ?? []
+  const suggestions = useAddressSuggestions(text).data ?? []
   const resolve = useResolveSearch()
   const select = useSelectionStore((state) => state.select)
 
   const expanded = open && suggestions.length > 0
-  // La liste peut raccourcir sous la suggestion active quand de nouveaux résultats arrivent.
+  // The list may shrink below the active suggestion when new results arrive.
   const active = expanded && activeIndex < suggestions.length ? activeIndex : -1
   const optionId = (index: number) => `${listId}-${index}`
 
@@ -33,19 +33,19 @@ export function SearchBar() {
 
   const search = (target: SearchTarget) => {
     closeList()
-    // Sur mobile, le clavier masquerait la fiche qui s'ouvre.
+    // On mobile, the keyboard would hide the report that opens.
     if (window.matchMedia('(pointer: coarse)').matches) input.current?.blur()
-    resolve.mutate(target, { onSuccess: (parcelle) => select(parcelle.idu, { reframe: true }) })
+    resolve.mutate(target, { onSuccess: (parcel) => select(parcel.idu, { reframe: true }) })
   }
 
-  const choose = (adresse: Adresse) => {
-    setSaisie(adresse.label)
-    search({ adresse })
+  const choose = (address: Address) => {
+    setText(address.label)
+    search({ address })
   }
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
-    search({ saisie })
+    search({ input: text })
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -61,7 +61,7 @@ export function SearchBar() {
         return
       }
       case 'Enter':
-        // Sans suggestion active, Entrée soumet le formulaire : la saisie est résolue telle quelle.
+        // With no active suggestion, Enter submits the form: the input is resolved as is.
         if (active === -1) return
         event.preventDefault()
         choose(suggestions[active])
@@ -71,7 +71,7 @@ export function SearchBar() {
         if (expanded) {
           closeList()
         } else {
-          setSaisie('')
+          setText('')
           resolve.reset()
         }
     }
@@ -81,9 +81,9 @@ export function SearchBar() {
     <form role="search" onSubmit={onSubmit} className="relative min-w-0 flex-1">
       <SearchInput
         ref={input}
-        value={saisie}
+        value={text}
         onChange={(value) => {
-          setSaisie(value)
+          setText(value)
           setOpen(true)
           setActiveIndex(-1)
           resolve.reset()

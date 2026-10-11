@@ -1,64 +1,64 @@
 import type { LonLat } from './geo'
 import { parseIdu } from './idu'
 
-/** Ce que l'utilisateur a tapé dans la barre de recherche, une fois son type reconnu. */
+/** What the user typed in the search bar, once its kind is recognized. */
 export type SearchQuery =
   | { kind: 'idu'; idu: string }
   | {
       kind: 'reference'
-      /** La saisie telle quelle, pour la citer si elle ne désigne rien. */
-      texte: string
-      /** La commune par son code INSEE (celui de l'arrondissement à Paris, Lyon et Marseille) ou par son nom. */
-      commune: { codeInsee: string } | { nom: string }
-      /** Préfixe d'une commune absorbée, s'il est précisé (ex. « 804 » à Marseille). */
-      prefixe: string | null
-      /** Sur 2 caractères, comme l'attend le cadastre (« A » → « 0A »). */
+      /** The input as is, to quote it if it designates nothing. */
+      text: string
+      /** The municipality by its INSEE code (that of the district in Paris, Lyon and Marseille) or by its name. */
+      municipality: { inseeCode: string } | { name: string }
+      /** Prefix of an absorbed municipality, if given (e.g. « 804 » in Marseille). */
+      prefix: string | null
+      /** On 2 characters, as the cadastre expects it (« A » → « 0A »). */
       section: string
-      /** Sur 4 chiffres (« 33 » → « 0033 »). */
-      numero: string
+      /** On 4 digits (« 33 » → « 0033 »). */
+      number: string
     }
-  | { kind: 'coordonnees'; point: LonLat }
-  | { kind: 'adresse'; texte: string }
-  /** Trop peu pour chercher quoi que ce soit : le géocodeur refuse moins de 3 caractères. */
+  | { kind: 'coordinates'; point: LonLat }
+  | { kind: 'address'; text: string }
+  /** Too little to search for anything: the geocoder rejects fewer than 3 characters. */
   | { kind: 'incomplete' }
 
-// « latitude, longitude », séparés par une virgule, un point-virgule ou une espace, la virgule
-// décimale française acceptée. Les décimales obligatoires évitent de prendre « 75 12 » pour un point.
-const COORDONNEES = /^(-?\d{1,2}[.,]\d+) ?(?:[;,] ?| )(-?\d{1,3}[.,]\d+)$/
-// commune + préfixe facultatif + section (une ou deux lettres) + numéro, ex. « 13201 804 B 401 »
+// « latitude, longitude », separated by a comma, a semicolon or a space, the French decimal
+// comma accepted. Mandatory decimals avoid taking « 75 12 » for a point.
+const COORDINATES = /^(-?\d{1,2}[.,]\d+) ?(?:[;,] ?| )(-?\d{1,3}[.,]\d+)$/
+// municipality + optional prefix + section (one or two letters) + number, e.g. « 13201 804 B 401 »
 const REFERENCE = /^(.+?) (?:(\d{3}) )?(0?[A-Z]|[A-Z]{2}) (\d{1,4})$/i
-const CODE_INSEE = /^(?:\d{5}|2[AB]\d{3})$/i
-// Un nom de commune commence par une lettre : « 12 rue de Paris B 3 » reste une adresse.
-const NOM_COMMUNE = /^\p{L}/u
-// Le géocodeur répond 400 à moins de 3 caractères ou à un texte qui ne commence pas par une
-// lettre ou un chiffre.
-const ADRESSE = /^[\p{L}\d].{2,}$/u
+const INSEE_CODE = /^(?:\d{5}|2[AB]\d{3})$/i
+// A municipality name starts with a letter: « 12 rue de Paris B 3 » stays an address.
+const MUNICIPALITY_NAME = /^\p{L}/u
+// The geocoder answers 400 to fewer than 3 characters or to a text that does not start with a
+// letter or a digit.
+const ADDRESS = /^[\p{L}\d].{2,}$/u
 
-/** Reconnaît le type de saisie, sans appel réseau. */
-export function parseSearchQuery(saisie: string): SearchQuery {
-  const texte = saisie.trim().replace(/\s+/g, ' ')
-  const idu = parseIdu(texte.toUpperCase())
+/** Recognizes the kind of input, without any network call. */
+export function parseSearchQuery(input: string): SearchQuery {
+  const text = input.trim().replace(/\s+/g, ' ')
+  const idu = parseIdu(text.toUpperCase())
   if (idu) return { kind: 'idu', idu: idu.idu }
 
-  const coordonnees = COORDONNEES.exec(texte)
-  if (coordonnees) {
-    const [lat, lon] = coordonnees.slice(1).map((nombre) => Number(nombre.replace(',', '.')))
-    if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) return { kind: 'coordonnees', point: { lon, lat } }
+  const coordinates = COORDINATES.exec(text)
+  if (coordinates) {
+    const [lat, lon] = coordinates.slice(1).map((value) => Number(value.replace(',', '.')))
+    if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) return { kind: 'coordinates', point: { lon, lat } }
   }
 
-  const reference = REFERENCE.exec(texte)
+  const reference = REFERENCE.exec(text)
   if (reference) {
-    const [, commune, prefixe, section, numero] = reference
+    const [, municipality, prefix, section, number] = reference
     const query = {
       kind: 'reference' as const,
-      texte,
-      prefixe: prefixe ?? null,
+      text,
+      prefix: prefix ?? null,
       section: section.toUpperCase().padStart(2, '0'),
-      numero: numero.padStart(4, '0'),
+      number: number.padStart(4, '0'),
     }
-    if (CODE_INSEE.test(commune)) return { ...query, commune: { codeInsee: commune.toUpperCase() } }
-    if (NOM_COMMUNE.test(commune)) return { ...query, commune: { nom: commune } }
+    if (INSEE_CODE.test(municipality)) return { ...query, municipality: { inseeCode: municipality.toUpperCase() } }
+    if (MUNICIPALITY_NAME.test(municipality)) return { ...query, municipality: { name: municipality } }
   }
 
-  return ADRESSE.test(texte) ? { kind: 'adresse', texte } : { kind: 'incomplete' }
+  return ADDRESS.test(text) ? { kind: 'address', text } : { kind: 'incomplete' }
 }

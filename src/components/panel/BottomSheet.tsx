@@ -8,156 +8,156 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react'
-import { CRANS, cranAuRelachement, cranVoisin, PART_MI_ECRAN, type Cran } from '@/lib/bottom-sheet'
+import { adjacentSnap, HALF_SCREEN_RATIO, SNAPS, snapOnRelease, type Snap } from '@/lib/bottom-sheet'
 import { useUiStore } from '@/stores/ui-store'
 
 interface BottomSheetProps {
   header: ReactNode
   children: ReactNode
-  /** Cran à l'ouverture du panneau ; ensuite, c'est l'utilisateur qui choisit. */
-  cranInitial: Cran
+  /** Snap when the panel opens; afterwards, the user chooses. */
+  initialSnap: Snap
 }
 
-const LIBELLES: Record<Cran, string> = {
-  apercu: 'Aperçu',
-  'mi-ecran': 'Mi-écran',
-  'plein-ecran': 'Plein écran',
+const LABELS: Record<Snap, string> = {
+  peek: 'Aperçu',
+  half: 'Mi-écran',
+  full: 'Plein écran',
 }
 
-// Le cadrage du store carte réserve la même part de l'écran au mi-écran.
-const HAUTEURS_CSS = { 'mi-ecran': `${PART_MI_ECRAN * 100}svh`, 'plein-ecran': '100svh' }
+// The map store's framing reserves the same share of the screen for the half snap.
+const CSS_HEIGHTS = { half: `${HALF_SCREEN_RATIO * 100}svh`, full: '100svh' }
 
-// En deçà, le doigt hésite ou tape (fermer la fiche) : ce n'est pas encore un glissement.
-const SEUIL_DE_GLISSEMENT = 6
-// Un doigt immobile avant d'être levé n'a plus d'élan, quelle que soit sa vitesse passée.
-const DUREE_D_ELAN = 100
+// Below this, the finger hesitates or taps (close the report): it is not a drag yet.
+const DRAG_THRESHOLD = 6
+// A finger held still before being lifted has no momentum left, whatever its past velocity.
+const MOMENTUM_WINDOW = 100
 
-interface Geste {
+interface Gesture {
   pointerId: number
-  yDepart: number
-  hauteurDepart: number
+  startY: number
+  startHeight: number
   y: number
   t: number
-  /** px/ms, positive vers le haut. */
-  vitesse: number
-  glisse: boolean
+  /** px/ms, positive upwards. */
+  velocity: number
+  dragging: boolean
 }
 
 /**
- * Contenant mobile de la fiche : panneau qui remonte du bas de l'écran et se pose sur trois crans
- * (store interface). La poignée et l'en-tête se font glisser au doigt ; la poignée se pilote aussi
- * au clavier et d'un tap. En aperçu, seul l'en-tête dépasse et la carte reste utilisable au-dessus.
+ * Mobile container of the report: panel that rises from the bottom of the screen and rests on three snaps
+ * (UI store). The handle and the header are dragged with the finger; the handle can also be driven
+ * with the keyboard and by a tap. In peek, only the header shows and the map stays usable above.
  */
-export function BottomSheet({ header, children, cranInitial }: BottomSheetProps) {
-  const cran = useUiStore((state) => state.sheetCran)
-  const setCran = useUiStore((state) => state.setSheetCran)
+export function BottomSheet({ header, children, initialSnap }: BottomSheetProps) {
+  const snap = useUiStore((state) => state.sheetSnap)
+  const setSnap = useUiStore((state) => state.setSheetSnap)
   const sheet = useRef<HTMLElement>(null)
-  const apercu = useRef<HTMLDivElement>(null)
-  const [hauteurApercu, setHauteurApercu] = useState(0)
-  const [hauteurGlissee, setHauteurGlissee] = useState<number | null>(null)
-  const geste = useRef<Geste | null>(null)
+  const peek = useRef<HTMLDivElement>(null)
+  const [peekHeight, setPeekHeight] = useState(0)
+  const [draggedHeight, setDraggedHeight] = useState<number | null>(null)
+  const gesture = useRef<Gesture | null>(null)
 
-  // Figé au montage : une sélection suivante, fiche déjà ouverte, ne doit pas déplacer le panneau.
-  const [cranAOuverture] = useState(cranInitial)
+  // Frozen on mount: a later selection, with the report already open, must not move the panel.
+  const [snapOnOpen] = useState(initialSnap)
   useEffect(() => {
-    setCran(cranAOuverture)
-    // Repartir de l'aperçu à la fermeture : la prochaine fiche remontera du bas au lieu de
-    // s'afficher d'abord au cran où la précédente a été laissée.
-    return () => setCran('apercu')
-  }, [setCran, cranAOuverture])
+    setSnap(snapOnOpen)
+    // Go back to peek on close: the next report will rise from the bottom instead of first
+    // showing at the snap where the previous one was left.
+    return () => setSnap('peek')
+  }, [setSnap, snapOnOpen])
 
-  // L'aperçu épouse la poignée et l'en-tête, dont la hauteur dépend du texte et du zoom.
+  // The peek fits the handle and the header, whose height depends on the text and the zoom.
   useLayoutEffect(() => {
-    const zone = apercu.current
-    const panneau = sheet.current
-    if (!zone || !panneau) return
-    const mesurer = () => setHauteurApercu(zone.offsetHeight + panneau.clientTop)
-    mesurer()
-    const observer = new ResizeObserver(mesurer)
-    observer.observe(zone)
+    const area = peek.current
+    const panel = sheet.current
+    if (!area || !panel) return
+    const measure = () => setPeekHeight(area.offsetHeight + panel.clientTop)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(area)
     return () => observer.disconnect()
   }, [])
 
-  const hauteursEnPx = (): Record<Cran, number> => ({
-    apercu: hauteurApercu,
-    'mi-ecran': window.innerHeight * PART_MI_ECRAN,
-    'plein-ecran': window.innerHeight,
+  const heightsInPx = (): Record<Snap, number> => ({
+    peek: peekHeight,
+    half: window.innerHeight * HALF_SCREEN_RATIO,
+    full: window.innerHeight,
   })
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!event.isPrimary || event.button !== 0 || !sheet.current) return
-    geste.current = {
+    gesture.current = {
       pointerId: event.pointerId,
-      yDepart: event.clientY,
-      hauteurDepart: sheet.current.offsetHeight,
+      startY: event.clientY,
+      startHeight: sheet.current.offsetHeight,
       y: event.clientY,
       t: event.timeStamp,
-      vitesse: 0,
-      glisse: false,
+      velocity: 0,
+      dragging: false,
     }
   }
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const g = geste.current
+    const g = gesture.current
     if (!g || g.pointerId !== event.pointerId) return
-    if (!g.glisse) {
-      if (Math.abs(event.clientY - g.yDepart) < SEUIL_DE_GLISSEMENT) return
-      g.glisse = true
+    if (!g.dragging) {
+      if (Math.abs(event.clientY - g.startY) < DRAG_THRESHOLD) return
+      g.dragging = true
       event.currentTarget.setPointerCapture(event.pointerId)
     }
     const dt = event.timeStamp - g.t
-    if (dt > 0) g.vitesse = (g.y - event.clientY) / dt
+    if (dt > 0) g.velocity = (g.y - event.clientY) / dt
     g.y = event.clientY
     g.t = event.timeStamp
-    const hauteur = g.hauteurDepart + g.yDepart - event.clientY
-    setHauteurGlissee(Math.min(Math.max(hauteur, hauteurApercu), window.innerHeight))
+    const height = g.startHeight + g.startY - event.clientY
+    setDraggedHeight(Math.min(Math.max(height, peekHeight), window.innerHeight))
   }
 
   const onPointerEnd = (event: PointerEvent<HTMLDivElement>) => {
-    const g = geste.current
+    const g = gesture.current
     if (!g || g.pointerId !== event.pointerId) return
-    geste.current = null
-    if (!g.glisse || hauteurGlissee === null) return
-    const elan = event.type === 'pointerup' && event.timeStamp - g.t < DUREE_D_ELAN
-    setCran(
-      cranAuRelachement({
-        hauteurs: hauteursEnPx(),
-        hauteur: hauteurGlissee,
-        vitesse: elan ? g.vitesse : 0,
+    gesture.current = null
+    if (!g.dragging || draggedHeight === null) return
+    const momentum = event.type === 'pointerup' && event.timeStamp - g.t < MOMENTUM_WINDOW
+    setSnap(
+      snapOnRelease({
+        heights: heightsInPx(),
+        height: draggedHeight,
+        velocity: momentum ? g.velocity : 0,
       }),
     )
-    setHauteurGlissee(null)
+    setDraggedHeight(null)
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const suivant = cranAuClavier(cran, event.key)
-    if (!suivant) return
+    const next = snapForKey(snap, event.key)
+    if (!next) return
     event.preventDefault()
-    setCran(suivant)
+    setSnap(next)
   }
 
-  // Un tap sur la poignée déplie d'un cran, et replie tout depuis le plein écran.
-  const onTap = () => setCran(cran === 'plein-ecran' ? 'apercu' : cranVoisin(cran, 'haut'))
+  // A tap on the handle expands by one snap, and collapses everything from full screen.
+  const onTap = () => setSnap(snap === 'full' ? 'peek' : adjacentSnap(snap, 'up'))
 
-  const hauteur =
-    hauteurGlissee !== null
-      ? `${hauteurGlissee}px`
-      : cran === 'apercu'
-        ? `${hauteurApercu}px`
-        : HAUTEURS_CSS[cran]
+  const height =
+    draggedHeight !== null
+      ? `${draggedHeight}px`
+      : snap === 'peek'
+        ? `${peekHeight}px`
+        : CSS_HEIGHTS[snap]
 
   return (
     <aside
       ref={sheet}
       aria-label="Fiche de la parcelle"
-      style={{ height: hauteur }}
+      style={{ height }}
       className={cn(
         'fixed inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-xl border-t bg-background/85 shadow-lg backdrop-blur-md',
-        hauteurGlissee === null && 'transition-[height] duration-300 ease-out motion-reduce:transition-none',
+        draggedHeight === null && 'transition-[height] duration-300 ease-out motion-reduce:transition-none',
       )}
     >
       <div
-        ref={apercu}
+        ref={peek}
         className="shrink-0 touch-none select-none"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -170,9 +170,9 @@ export function BottomSheet({ header, children, cranInitial }: BottomSheetProps)
           aria-label="Hauteur de la fiche"
           aria-orientation="vertical"
           aria-valuemin={0}
-          aria-valuemax={CRANS.length - 1}
-          aria-valuenow={CRANS.indexOf(cran)}
-          aria-valuetext={LIBELLES[cran]}
+          aria-valuemax={SNAPS.length - 1}
+          aria-valuenow={SNAPS.indexOf(snap)}
+          aria-valuetext={LABELS[snap]}
           onKeyDown={onKeyDown}
           onClick={onTap}
           className="flex h-6 cursor-grab items-center justify-center outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset active:cursor-grabbing"
@@ -181,9 +181,9 @@ export function BottomSheet({ header, children, cranInitial }: BottomSheetProps)
         </div>
         {header}
       </div>
-      {/* Masqué en aperçu : le clavier ne doit pas y entrer tant qu'il n'est pas visible. */}
+      {/* Hidden in peek: the keyboard must not enter it while it is not visible. */}
       <div
-        inert={cran === 'apercu' && hauteurGlissee === null}
+        inert={snap === 'peek' && draggedHeight === null}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3"
       >
         {children}
@@ -192,20 +192,20 @@ export function BottomSheet({ header, children, cranInitial }: BottomSheetProps)
   )
 }
 
-function cranAuClavier(cran: Cran, key: string): Cran | null {
+function snapForKey(snap: Snap, key: string): Snap | null {
   switch (key) {
     case 'ArrowUp':
     case 'ArrowRight':
     case 'PageUp':
-      return cranVoisin(cran, 'haut')
+      return adjacentSnap(snap, 'up')
     case 'ArrowDown':
     case 'ArrowLeft':
     case 'PageDown':
-      return cranVoisin(cran, 'bas')
+      return adjacentSnap(snap, 'down')
     case 'Home':
-      return CRANS[0]
+      return SNAPS[0]
     case 'End':
-      return CRANS[CRANS.length - 1]
+      return SNAPS[SNAPS.length - 1]
     default:
       return null
   }

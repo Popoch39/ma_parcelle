@@ -1,86 +1,86 @@
 import type { Map as MapLibreMap, PaddingOptions } from 'maplibre-gl'
 import { create } from 'zustand'
-import { PART_MI_ECRAN } from '@/lib/bottom-sheet'
-import type { Emprise, LonLat } from '@/lib/geo'
-import { DESKTOP, largeurPanneau } from '@/lib/mise-en-page'
+import { HALF_SCREEN_RATIO } from '@/lib/bottom-sheet'
+import type { BBox, LonLat } from '@/lib/geo'
+import { DESKTOP, panelWidth } from '@/lib/layout'
 import type { Basemap } from '@/map/basemaps'
-import { CALQUES, type Calque } from '@/map/calques'
+import { OVERLAYS, type Overlay } from '@/map/overlays'
 
 interface MapState {
-  /** Instance MapLibre, posée par `MapView` au chargement du style et retirée au démontage. */
+  /** MapLibre instance, set by `MapView` when the style loads and removed on unmount. */
   map: MapLibreMap | null
   setMap: (map: MapLibreMap | null) => void
-  /** Fond actif. Le plan suit le thème affiché. */
+  /** Active basemap. The plan follows the displayed theme. */
   basemap: Basemap
   setBasemap: (basemap: Basemap) => void
-  /** Calques affichés au-dessus du fond, sans ordre. */
-  calquesActifs: Calque[]
-  setCalqueActif: (calque: Calque, actif: boolean) => void
-  /** Servitude survolée dans la fiche (son `id`), dont la carte montre l'emprise. */
-  servitudeSurvolee: string | null
-  survolerServitude: (id: string | null) => void
-  /** Vente (son `id`) survolée ou parcourue au clavier, dans la liste comme sur la carte : les deux la mettent en évidence. */
-  venteSurvolee: string | null
-  survolerVente: (id: string | null) => void
-  /** Vente dont la carte montre le détail dans une bulle. */
-  venteOuverte: string | null
-  ouvrirVente: (id: string) => void
+  /** Overlays shown above the basemap, unordered. */
+  activeOverlays: Overlay[]
+  setOverlayActive: (overlay: Overlay, active: boolean) => void
+  /** Easement hovered in the report (its `id`), whose geometry the map shows. */
+  hoveredEasement: string | null
+  hoverEasement: (id: string | null) => void
+  /** Sale (its `id`) hovered or browsed with the keyboard, in the list as on the map: both highlight it. */
+  hoveredSale: string | null
+  hoverSale: (id: string | null) => void
+  /** Sale whose details the map shows in a popup. */
+  openedSale: string | null
+  openSale: (id: string) => void
   /**
-   * Ferme la bulle de cette vente, si c'est encore elle qui est ouverte : en passant d'un point
-   * à un autre, l'ancienne bulle peut se fermer après l'ouverture de la nouvelle.
+   * Closes this sale's popup, if it is still the open one: when moving from one point to
+   * another, the old popup may close after the new one opens.
    */
-  fermerVente: (id: string) => void
-  /** Cadre la carte sur une emprise, en laissant la place au panneau de la fiche. */
-  fitEmprise: (emprise: Emprise) => void
-  /** Amène la carte sur un point, assez près pour y toucher une parcelle. */
+  closeSale: (id: string) => void
+  /** Frames the map on a bbox, leaving room for the report panel. */
+  fitBBox: (bbox: BBox) => void
+  /** Brings the map to a point, close enough to tap a parcel there. */
   centerOn: (point: LonLat) => void
-  /** Amène un point dans la partie de la carte que la fiche ne couvre pas, s'il n'y est pas déjà, sans changer le zoom. */
-  montrerPoint: (point: LonLat) => void
+  /** Brings a point into the part of the map the report does not cover, if it is not already there, without changing the zoom. */
+  revealPoint: (point: LonLat) => void
 }
 
-// Les parcelles PCI s'affichent à partir du zoom 15 ; à 18, on distingue celle devant soi.
-const ZOOM_PARCELLE = 18
+// PCI parcels show from zoom 15; at 18, the one in front of you stands out.
+const PARCEL_ZOOM = 18
 
 export const useMapStore = create<MapState>()((set, get) => ({
   map: null,
   setMap: (map) => set({ map }),
   basemap: 'plan',
   setBasemap: (basemap) => set({ basemap }),
-  calquesActifs: CALQUES.flatMap(({ id, actifAuDepart }) => (actifAuDepart ? [id] : [])),
-  setCalqueActif: (calque, actif) =>
-    set(({ calquesActifs }) => ({
-      calquesActifs: [...calquesActifs.filter((id) => id !== calque), ...(actif ? [calque] : [])],
+  activeOverlays: OVERLAYS.flatMap(({ id, activeByDefault }) => (activeByDefault ? [id] : [])),
+  setOverlayActive: (overlay, active) =>
+    set(({ activeOverlays }) => ({
+      activeOverlays: [...activeOverlays.filter((id) => id !== overlay), ...(active ? [overlay] : [])],
     })),
-  servitudeSurvolee: null,
-  survolerServitude: (servitudeSurvolee) => set({ servitudeSurvolee }),
-  venteSurvolee: null,
-  survolerVente: (venteSurvolee) => set({ venteSurvolee }),
-  venteOuverte: null,
-  ouvrirVente: (venteOuverte) => set({ venteOuverte }),
-  fermerVente: (id) => set(({ venteOuverte }) => (venteOuverte === id ? { venteOuverte: null } : {})),
-  fitEmprise: (emprise) => get().map?.fitBounds(emprise, { padding: fichePadding(), maxZoom: ZOOM_PARCELLE }),
+  hoveredEasement: null,
+  hoverEasement: (hoveredEasement) => set({ hoveredEasement }),
+  hoveredSale: null,
+  hoverSale: (hoveredSale) => set({ hoveredSale }),
+  openedSale: null,
+  openSale: (openedSale) => set({ openedSale }),
+  closeSale: (id) => set(({ openedSale }) => (openedSale === id ? { openedSale: null } : {})),
+  fitBBox: (bbox) => get().map?.fitBounds(bbox, { padding: reportPadding(), maxZoom: PARCEL_ZOOM }),
   centerOn: ({ lon, lat }) => {
     const map = get().map
-    map?.flyTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), ZOOM_PARCELLE) })
+    map?.flyTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), PARCEL_ZOOM) })
   },
-  montrerPoint: ({ lon, lat }) => {
+  revealPoint: ({ lon, lat }) => {
     const map = get().map
     if (!map) return
-    const { top, right, bottom, left } = fichePadding()
+    const { top, right, bottom, left } = reportPadding()
     const { x, y } = map.project([lon, lat])
     const { clientWidth, clientHeight } = map.getContainer()
     if (x >= left && x <= clientWidth - right && y >= top && y <= clientHeight - bottom) return
-    // Un décalage plutôt qu'un `padding`, que MapLibre garderait pour tous les mouvements suivants.
+    // An offset rather than a `padding`, which MapLibre would keep for every following move.
     map.panTo([lon, lat], { offset: [(left - right) / 2, (top - bottom) / 2] })
   },
 }))
 
-// La place prise par la fiche : le panneau à gauche sur desktop (à 12 px du bord), le bottom
-// sheet à mi-écran sur mobile, sous la barre de recherche (56 px) qui couvre le haut de l'écran.
-function fichePadding(): Required<PaddingOptions> {
+// The room taken by the report: the panel on the left on desktop (12 px from the edge), the bottom
+// sheet at half screen on mobile, below the search bar (56 px) that covers the top of the screen.
+function reportPadding(): Required<PaddingOptions> {
   const margin = 48
   if (window.matchMedia(DESKTOP).matches) {
-    return { top: margin, right: margin, bottom: margin, left: largeurPanneau() + 12 + margin }
+    return { top: margin, right: margin, bottom: margin, left: panelWidth() + 12 + margin }
   }
-  return { top: 56 + margin, right: margin, bottom: window.innerHeight * PART_MI_ECRAN + margin, left: margin }
+  return { top: 56 + margin, right: margin, bottom: window.innerHeight * HALF_SCREEN_RATIO + margin, left: margin }
 }

@@ -1,64 +1,64 @@
-/** IDU découpé en ses parties, telles que le cadastre les attend. */
+/** IDU split into its parts, as the cadastre expects them. */
 export interface IduParts {
   idu: string
-  /** Code INSEE porté par l'IDU : celui de l'arrondissement à Paris, Lyon et Marseille. */
-  codeInsee: string
-  /** Préfixe de section, non nul pour une commune absorbée (« 000 » sinon). */
-  prefixe: string
+  /** INSEE code carried by the IDU: that of the district in Paris, Lyon and Marseille. */
+  inseeCode: string
+  /** Section prefix, non-zero for an absorbed municipality (« 000 » otherwise). */
+  prefix: string
   section: string
-  numero: string
+  number: string
 }
 
-// département (2 chiffres ou 2A/2B) + commune (3) + préfixe (3) + section (2) + numéro (4)
+// department (2 digits or 2A/2B) + municipality (3) + prefix (3) + section (2) + number (4)
 const IDU = /^((?:\d{2}|2[AB])\d{3})(\d{3})([0-9A-Z]{2})(\d{4})$/
 
 /**
- * Référence cadastrale des actes, ex. « 33063 KJ 33 ». Le préfixe d'une commune absorbée
- * s'intercale avant la section : « 13201 804 0B 401 ».
+ * Cadastral reference as used in deeds, e.g. « 33063 KJ 33 ». The prefix of an absorbed
+ * municipality goes before the section: « 13201 804 0B 401 ».
  */
-export function formatReferenceCadastrale({ codeInsee, prefixe, section, numero }: IduParts): string {
-  return [codeInsee, prefixe === '000' ? null : prefixe, section, Number(numero)]
+export function formatCadastralReference({ inseeCode, prefix, section, number }: IduParts): string {
+  return [inseeCode, prefix === '000' ? null : prefix, section, Number(number)]
     .filter((part) => part !== null)
     .join(' ')
 }
 
-/** Arrondissement de Paris, Lyon ou Marseille désigné par un code INSEE. */
-export interface Arrondissement {
-  /** Code INSEE de l'arrondissement, ex. « 75107 ». */
-  codeInsee: string
-  /** Code INSEE de la commune, ex. « 75056 ». */
-  codeCommune: string
-  /** Les trois derniers chiffres du code de l'arrondissement, ex. « 107 ». */
-  codeArr: string
-  /** Rang de l'arrondissement dans sa commune, ex. 7. */
-  rang: number
+/** District (« arrondissement ») of Paris, Lyon or Marseille designated by an INSEE code. */
+export interface District {
+  /** INSEE code of the district, e.g. « 75107 ». */
+  inseeCode: string
+  /** INSEE code of the municipality, e.g. « 75056 ». */
+  municipalityCode: string
+  /** The last three digits of the district code, e.g. « 107 ». */
+  districtCode: string
+  /** Rank of the district within its municipality, e.g. 7. */
+  number: number
 }
 
-// Le cadastre range ces parcelles sous le code de la commune, mais l'IDU porte celui de
-// l'arrondissement : sans cette correspondance, la requête ne renvoie rien.
+// The cadastre files these parcels under the municipality code, but the IDU carries the
+// district's: without this mapping, the request returns nothing.
 const PLM = [
-  { codeCommune: '75056', premier: 75101, dernier: 75120 },
-  { codeCommune: '69123', premier: 69381, dernier: 69389 },
-  { codeCommune: '13055', premier: 13201, dernier: 13216 },
+  { municipalityCode: '75056', first: 75101, last: 75120 },
+  { municipalityCode: '69123', first: 69381, last: 69389 },
+  { municipalityCode: '13055', first: 13201, last: 13216 },
 ]
 
-/** L'arrondissement désigné par ce code INSEE, ou `null` hors de Paris, Lyon et Marseille. */
-export function arrondissementOf(codeInsee: string): Arrondissement | null {
-  const code = Number(codeInsee)
-  const ville = PLM.find(({ premier, dernier }) => code >= premier && code <= dernier)
-  if (!ville) return null
+/** The district designated by this INSEE code, or `null` outside Paris, Lyon and Marseille. */
+export function districtOf(inseeCode: string): District | null {
+  const code = Number(inseeCode)
+  const city = PLM.find(({ first, last }) => code >= first && code <= last)
+  if (!city) return null
   return {
-    codeInsee,
-    codeCommune: ville.codeCommune,
-    codeArr: codeInsee.slice(2),
-    rang: code - ville.premier + 1,
+    inseeCode,
+    municipalityCode: city.municipalityCode,
+    districtCode: inseeCode.slice(2),
+    number: code - city.first + 1,
   }
 }
 
-/** Découpe un IDU de 14 caractères, ou renvoie `null` s'il est mal formé. */
+/** Splits a 14-character IDU, or returns `null` if it is malformed. */
 export function parseIdu(idu: string): IduParts | null {
   const match = IDU.exec(idu)
   if (!match) return null
-  const [, codeInsee, prefixe, section, numero] = match
-  return { idu, codeInsee, prefixe, section, numero }
+  const [, inseeCode, prefix, section, number] = match
+  return { idu, inseeCode, prefix, section, number }
 }

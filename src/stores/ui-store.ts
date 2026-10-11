@@ -1,44 +1,44 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { BlocId } from '@/components/fiche/blocs'
-import type { Cran } from '@/lib/bottom-sheet'
-import { DESKTOP } from '@/lib/mise-en-page'
+import type { BlockId } from '@/components/report/blocks'
+import type { Snap } from '@/lib/bottom-sheet'
+import { DESKTOP } from '@/lib/layout'
 import { colorSchemeOf, persistedTheme, type Theme } from './theme'
 
 export type ColorScheme = 'light' | 'dark'
 
 interface UiState {
-  /** Thème du système, suivi en direct. */
+  /** System theme, tracked live. */
   systemColorScheme: ColorScheme
-  /** Écran desktop (panneau latéral) plutôt que mobile (bottom sheet), suivi en direct : rotation, redimensionnement. */
+  /** Desktop screen (side panel) rather than mobile (bottom sheet), tracked live: rotation, resizing. */
   desktop: boolean
-  /** Thème choisi par l'utilisateur, mémorisé dans le navigateur. */
+  /** Theme chosen by the user, remembered in the browser. */
   theme: Theme
   setTheme: (theme: Theme) => void
-  /** Hauteur du bottom sheet de la fiche sur mobile. */
-  sheetCran: Cran
-  setSheetCran: (cran: Cran) => void
-  /** Blocs de la fiche repliés par l'utilisateur ; les autres sont dépliés. Gardés d'une fiche à l'autre. */
-  blocsReplies: BlocId[]
-  basculerBloc: (bloc: BlocId) => void
+  /** Height of the report's bottom sheet on mobile. */
+  sheetSnap: Snap
+  setSheetSnap: (snap: Snap) => void
+  /** Report blocks collapsed by the user; the others are expanded. Kept from one report to the next. */
+  collapsedBlocks: BlockId[]
+  toggleBlock: (block: BlockId) => void
   /**
-   * Impression de la fiche en cours, de sa préparation à la fermeture de la fenêtre
-   * d'impression : la carte passe en clair et la fiche imprimée se monte, listes dépliées.
+   * Report print in progress, from its preparation to the closing of the print dialog:
+   * the map switches to light and the printed report mounts, lists expanded.
    */
-  impression: Impression | null
-  setImpression: (impression: Impression | null) => void
+  printJob: PrintJob | null
+  setPrintJob: (printJob: PrintJob | null) => void
 }
 
-export interface Impression {
+export interface PrintJob {
   date: Date
-  /** Image de la carte, ou null tant qu'elle n'est pas capturée ou si elle n'a pas pu l'être. */
-  carte: CarteImprimee | null
+  /** Map image, or null until it is captured or if it could not be. */
+  map: PrintedMap | null
 }
 
-export interface CarteImprimee {
-  /** Image en data URL. */
+export interface PrintedMap {
+  /** Image as a data URL. */
   image: string
-  /** Mentions des fonds et calques de la carte, dues avec l'image. */
+  /** Credits of the map's basemaps and overlays, owed with the image. */
   attribution: string
 }
 
@@ -53,29 +53,29 @@ export const useUiStore = create<UiState>()(
       desktop: desktopQuery().matches,
       theme: 'auto',
       setTheme: (theme) => set({ theme }),
-      sheetCran: 'apercu',
-      setSheetCran: (sheetCran) => set({ sheetCran }),
-      blocsReplies: [],
-      basculerBloc: (bloc) =>
-        set(({ blocsReplies }) => ({
-          blocsReplies: blocsReplies.includes(bloc)
-            ? blocsReplies.filter((replie) => replie !== bloc)
-            : [...blocsReplies, bloc],
+      sheetSnap: 'peek',
+      setSheetSnap: (sheetSnap) => set({ sheetSnap }),
+      collapsedBlocks: [],
+      toggleBlock: (block) =>
+        set(({ collapsedBlocks }) => ({
+          collapsedBlocks: collapsedBlocks.includes(block)
+            ? collapsedBlocks.filter((collapsed) => collapsed !== block)
+            : [...collapsedBlocks, block],
         })),
-      impression: null,
-      setImpression: (impression) => set({ impression }),
+      printJob: null,
+      setPrintJob: (printJob) => set({ printJob }),
     }),
     {
-      name: 'ma-parcelle:interface',
-      // Seul le thème se mémorise : le thème système et l'écran se relisent à chaque visite, et
-      // chaque fiche s'ouvre au cran par défaut.
+      name: 'ma-parcelle:ui',
+      // Only the theme is remembered: the system theme and the screen are read again on each visit,
+      // and each report opens at the default snap.
       partialize: ({ theme }) => ({ theme }),
       merge: (persisted, current) => ({ ...current, theme: persistedTheme(persisted) }),
     },
   ),
 )
 
-/** Met le store à jour quand le système change de thème. Renvoie la fonction qui arrête le suivi. */
+/** Updates the store when the system changes theme. Returns the function that stops tracking. */
 export function followSystemColorScheme(): () => void {
   const query = darkQuery()
   const onChange = () => useUiStore.setState({ systemColorScheme: schemeOf(query) })
@@ -83,7 +83,7 @@ export function followSystemColorScheme(): () => void {
   return () => query.removeEventListener('change', onChange)
 }
 
-/** Met le store à jour quand l'écran passe de mobile à desktop ou l'inverse. Renvoie la fonction qui arrête le suivi. */
+/** Updates the store when the screen switches from mobile to desktop or back. Returns the function that stops tracking. */
 export function followDesktopLayout(): () => void {
   const query = desktopQuery()
   const onChange = () => useUiStore.setState({ desktop: query.matches })
@@ -92,31 +92,31 @@ export function followDesktopLayout(): () => void {
 }
 
 /**
- * Force sur `<html>` le thème choisi (classe `light` ou `dark`, lue par le CSS) ; en `auto`,
- * aucune classe : le CSS suit le système de lui-même. Renvoie la fonction qui arrête le suivi.
+ * Forces the chosen theme on `<html>` (`light` or `dark` class, read by the CSS); in `auto`,
+ * no class: the CSS follows the system by itself. Returns the function that stops tracking.
  */
 export function applyThemeToDocument(): () => void {
   const apply = ({ theme }: UiState) => {
     const root = document.documentElement
-    root.classList.toggle('light', theme === 'clair')
-    root.classList.toggle('dark', theme === 'sombre')
+    root.classList.toggle('light', theme === 'light')
+    root.classList.toggle('dark', theme === 'dark')
   }
   apply(useUiStore.getState())
   return useUiStore.subscribe(apply)
 }
 
 /**
- * Thème effectivement affiché : c'est lui que suivent le fond de carte et les couleurs des calques.
- * Le reste de l'interface passe en clair à l'impression par la feuille de style.
+ * Theme actually displayed: it is what the basemap and the overlay colors follow.
+ * The rest of the interface switches to light when printing through the stylesheet.
  */
 export const useColorScheme = () =>
   useUiStore((state) =>
-    colorSchemeOf(state.theme, state.systemColorScheme, { impression: state.impression !== null }),
+    colorSchemeOf(state.theme, state.systemColorScheme, { printing: state.printJob !== null }),
   )
 
-/** Vrai pendant une impression : les blocs déplient alors leurs listes. */
-export const useImpressionEnCours = () => useUiStore((state) => state.impression !== null)
+/** True while printing: blocks then expand their lists. */
+export const useIsPrinting = () => useUiStore((state) => state.printJob !== null)
 
-/** Vrai si le bloc est replié à l'écran ; tout bloc est déplié à l'impression, comme ce qui n'est pas un bloc. */
-export const useBlocReplie = (bloc: BlocId | undefined) =>
-  useUiStore((state) => bloc !== undefined && state.impression === null && state.blocsReplies.includes(bloc))
+/** True if the block is collapsed on screen; every block is expanded when printing, like whatever is not a block. */
+export const useBlockCollapsed = (block: BlockId | undefined) =>
+  useUiStore((state) => block !== undefined && state.printJob === null && state.collapsedBlocks.includes(block))

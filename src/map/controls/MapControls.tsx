@@ -1,12 +1,12 @@
 import { BasemapSwitcher } from './BasemapSwitcher'
 import { LayerToggles } from './LayerToggles'
+import { SalesLegend } from './SalesLegend'
 import { ThemeToggle } from './ThemeToggle'
-import { VentesLegend } from './VentesLegend'
 import { ZoomControl } from './ZoomControl'
 
 /**
- * Contrôles de la carte, empilés en haut à droite (sous la barre de recherche sur mobile, où
- * elle prend toute la largeur), chacun sur son propre fond. Un contrôle = une ligne.
+ * Map controls, stacked at the top right (below the search bar on mobile, where it takes
+ * the full width), each on its own background. One control = one line.
  */
 export function MapControls() {
   return (
@@ -15,7 +15,7 @@ export function MapControls() {
       <LayerToggles />
       <ThemeToggle />
       <ZoomControl />
-      <VentesLegend />
+      <SalesLegend />
     </div>
   )
 }

@@ -6,12 +6,12 @@ const ORTHO_SOURCE_ID = 'ortho'
 const SOURCES: Record<string, SourceSpecification> = {
   [ORTHO_SOURCE_ID]: {
     type: 'raster',
-    // Le WMTS de la Géoplateforme ne sert que du JPEG (PNG → 400).
+    // The Géoplateforme WMTS only serves JPEG (PNG → 400).
     tiles: [
       'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
     ],
     tileSize: 256,
-    // Le serveur répond 404 au-delà de 19 : MapLibre agrandit alors les tuiles du zoom 19.
+    // The server answers 404 beyond 19: MapLibre then upscales the zoom 19 tiles.
     maxzoom: 19,
     attribution: '© IGN – Photographies aériennes',
   },
@@ -19,7 +19,7 @@ const SOURCES: Record<string, SourceSpecification> = {
 
 const LAYERS: LayerSpecification[] = [{ id: 'ortho', type: 'raster', source: ORTHO_SOURCE_ID }]
 
-/** Photo aérienne de l'IGN, posée sous les surcouches quand c'est le fond actif. */
+/** IGN aerial photo, placed below the overlays when it is the active basemap. */
 export function OrthoLayer() {
   useMapLayer({ sources: SOURCES, layers: LAYERS, beneath: true })
   return null

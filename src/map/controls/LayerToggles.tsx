@@ -1,21 +1,21 @@
 import { Layers } from 'lucide-react'
 import { Toggle } from '@/components/ui/toggle'
-import { CALQUES } from '@/map/calques'
+import { OVERLAYS } from '@/map/overlays'
 import { useMapStore } from '@/stores/map-store'
 
-/** Affiche ou masque chacun des calques activables, indépendamment les uns des autres. */
+/** Shows or hides each of the toggleable overlays, independently of one another. */
 export function LayerToggles() {
-  const calquesActifs = useMapStore((state) => state.calquesActifs)
-  const setCalqueActif = useMapStore((state) => state.setCalqueActif)
+  const activeOverlays = useMapStore((state) => state.activeOverlays)
+  const setOverlayActive = useMapStore((state) => state.setOverlayActive)
   return (
     <div role="group" aria-label="Calques" className="flex items-center gap-0.5">
       <Layers aria-hidden className="mx-1.5 size-3.5 text-muted-foreground" />
-      {CALQUES.map(({ id, label }) => (
+      {OVERLAYS.map(({ id, label }) => (
         <Toggle
           key={id}
           size="sm"
-          pressed={calquesActifs.includes(id)}
-          onPressedChange={(pressed) => setCalqueActif(id, pressed)}
+          pressed={activeOverlays.includes(id)}
+          onPressedChange={(pressed) => setOverlayActive(id, pressed)}
         >
           {label}
         </Toggle>

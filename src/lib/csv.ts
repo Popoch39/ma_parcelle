@@ -1,36 +1,36 @@
 /**
- * Lignes d'un CSV (RFC 4180 : séparateur virgule, champs entre guillemets, `""` pour un
- * guillemet), indexées par les noms de l'en-tête. Un corps vide ne donne aucune ligne.
+ * Rows of a CSV (RFC 4180: comma separator, quoted fields, `""` for a quote), keyed by the
+ * header names. An empty body yields no rows.
  */
-export function parseCsv(texte: string): Record<string, string>[] {
-  const [entete = [], ...lignes] = rowsOf(texte)
-  return lignes.map((champs) => Object.fromEntries(entete.map((nom, i) => [nom, champs[i] ?? ''])))
+export function parseCsv(text: string): Record<string, string>[] {
+  const [header = [], ...lines] = rowsOf(text)
+  return lines.map((fields) => Object.fromEntries(header.map((name, i) => [name, fields[i] ?? ''])))
 }
 
-function rowsOf(texte: string): string[][] {
+function rowsOf(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
-  let champ = ''
-  let entreGuillemets = false
-  for (let i = 0; i < texte.length; i++) {
-    const c = texte[i]
-    if (entreGuillemets) {
-      if (c !== '"') champ += c
-      else if (texte[i + 1] === '"') champ += texte[++i]
-      else entreGuillemets = false
-    } else if (c === '"') entreGuillemets = true
+  let field = ''
+  let inQuotes = false
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (inQuotes) {
+      if (c !== '"') field += c
+      else if (text[i + 1] === '"') field += text[++i]
+      else inQuotes = false
+    } else if (c === '"') inQuotes = true
     else if (c === ',') {
-      row.push(champ)
-      champ = ''
+      row.push(field)
+      field = ''
     } else if (c === '\n' || c === '\r') {
-      if (c === '\r' && texte[i + 1] === '\n') i++
-      row.push(champ)
+      if (c === '\r' && text[i + 1] === '\n') i++
+      row.push(field)
       rows.push(row)
       row = []
-      champ = ''
-    } else champ += c
+      field = ''
+    } else field += c
   }
-  // Dernière ligne sans saut de ligne final.
-  if (champ !== '' || row.length > 0) rows.push([...row, champ])
+  // Last line without a trailing newline.
+  if (field !== '' || row.length > 0) rows.push([...row, field])
   return rows
 }

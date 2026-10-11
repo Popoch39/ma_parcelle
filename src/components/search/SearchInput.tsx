@@ -7,17 +7,17 @@ interface SearchInputProps {
   onChange: (value: string) => void
   onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
   onBlur: () => void
-  /** Identifiant de la liste de suggestions que le champ contrôle. */
+  /** Id of the suggestion list the field controls. */
   listId: string
   expanded: boolean
-  /** Identifiant de la suggestion active, annoncée sans quitter le champ. */
+  /** Id of the active suggestion, announced without leaving the field. */
   activeId: string | undefined
-  /** Identifiant du message d'erreur qui décrit le champ, s'il y en a un. */
+  /** Id of the error message that describes the field, if there is one. */
   errorId: string | undefined
   pending: boolean
 }
 
-/** Champ de la recherche, au rôle de combobox : le focus y reste pendant qu'on parcourt les suggestions. */
+/** Search field, with the combobox role: focus stays on it while browsing the suggestions. */
 export function SearchInput({
   ref,
   value,

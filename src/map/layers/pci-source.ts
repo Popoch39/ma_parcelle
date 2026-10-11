@@ -1,26 +1,26 @@
 import type { SourceSpecification } from 'maplibre-gl'
 
-/** Tuiles vectorielles du plan cadastral (PCI) de l'IGN, partagées par les calques Parcelles et Sélection. */
+/** Vector tiles of the IGN cadastral plan (PCI), shared by the Parcels and Selection layers. */
 export const PCI_SOURCE_ID = 'pci'
 
-/** Couche des tuiles qui porte les parcelles et leurs attributs (`idu`, `section`, `contenance`…). */
-export const PCI_PARCELLE = 'parcelle'
+/** Tile layer carrying the parcels and their attributes (`idu`, `section`, `contenance`…). */
+export const PCI_PARCEL_LAYER = 'parcelle'
 
-/** Couche la plus basse du calque Parcelles : une surcouche qui doit rester sous les parcelles se pose sous elle. */
-export const PARCELLES_HIT_LAYER = 'parcelles-clic'
+/** Lowest layer of the Parcels layers: an overlay that must stay below the parcels is placed under it. */
+export const PARCELS_HIT_LAYER = 'parcels-click'
 
-/** Zoom à partir duquel les parcelles existent, et donc la sélection est surlignée. */
+/** Zoom from which parcels exist, and so the selection is highlighted. */
 export const PCI_ZOOM_MIN = 15
 
 export const PCI_SOURCES: Record<string, SourceSpecification> = {
   [PCI_SOURCE_ID]: {
     type: 'vector',
     tiles: ['https://data.geopf.fr/tms/1.0.0/PCI/{z}/{x}/{y}.pbf'],
-    // Le serveur répond 404 au-delà de 19.
+    // The server answers 404 beyond 19.
     minzoom: PCI_ZOOM_MIN,
     maxzoom: 19,
-    // Les objets des tuiles n'ont pas d'identifiant : l'IDU en tient lieu.
-    promoteId: { [PCI_PARCELLE]: 'idu' },
+    // Tile features have no identifier: the IDU stands in for it.
+    promoteId: { [PCI_PARCEL_LAYER]: 'idu' },
     attribution: '© IGN – Plan cadastral',
   },
 }

@@ -1,38 +1,38 @@
 import type { FillLayerSpecification, LineLayerSpecification } from 'maplibre-gl'
 
 interface Surface {
-  /** Préfixe des couches : `<id>-aplat` et `<id>-contour`. */
+  /** Layer prefix: `<id>-fill` and `<id>-outline`. */
   id: string
-  /** Source GeoJSON des surfaces. */
+  /** GeoJSON source of the surfaces. */
   source: string
-  couleur: string
-  /** Opacité de l'aplat, assez faible pour laisser lire la parcelle et le fond dessous. */
-  opaciteAplat: number
-  /** Trait du contour : épaisseur, pointillés… */
-  contour: LineLayerSpecification['paint']
+  color: string
+  /** Fill opacity, low enough to keep the parcel and the basemap below readable. */
+  fillOpacity: number
+  /** Outline stroke: width, dashes… */
+  outline: LineLayerSpecification['paint']
 }
 
-/** Couches d'une surface mise en évidence sur la carte : un aplat léger et son contour, de même couleur. */
-export function aplatEtContour({
+/** Layers of a surface highlighted on the map: a light fill and its outline, of the same color. */
+export function fillAndOutline({
   id,
   source,
-  couleur,
-  opaciteAplat,
-  contour,
+  color,
+  fillOpacity,
+  outline,
 }: Surface): [FillLayerSpecification, LineLayerSpecification] {
   return [
     {
-      id: `${id}-aplat`,
+      id: `${id}-fill`,
       type: 'fill',
       source,
-      paint: { 'fill-color': couleur, 'fill-opacity': opaciteAplat },
+      paint: { 'fill-color': color, 'fill-opacity': fillOpacity },
     },
     {
-      id: `${id}-contour`,
+      id: `${id}-outline`,
       type: 'line',
       source,
       layout: { 'line-join': 'round' },
-      paint: { 'line-color': couleur, ...contour },
+      paint: { 'line-color': color, ...outline },
     },
   ]
 }

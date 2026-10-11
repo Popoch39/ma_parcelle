@@ -1,16 +1,16 @@
 import { cn } from 'cn'
 import { CircleAlert, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
-import type { NiveauAlerte } from '@/lib/synthese/synthese'
+import type { AlertLevel } from '@/lib/summary/summary'
 
-const NIVEAUX: Record<NiveauAlerte, { label: string; Icon: LucideIcon; className: string }> = {
-  information: { label: 'Information', Icon: Info, className: 'border-information/30 bg-information/10 text-information' },
-  vigilance: { label: 'Vigilance', Icon: TriangleAlert, className: 'border-vigilance/30 bg-vigilance/10 text-vigilance' },
-  alerte: { label: 'Alerte', Icon: CircleAlert, className: 'border-alerte/30 bg-alerte/10 text-alerte' },
+const LEVELS: Record<AlertLevel, { label: string; Icon: LucideIcon; className: string }> = {
+  info: { label: 'Information', Icon: Info, className: 'border-info/30 bg-info/10 text-info' },
+  caution: { label: 'Vigilance', Icon: TriangleAlert, className: 'border-caution/30 bg-caution/10 text-caution' },
+  alert: { label: 'Alerte', Icon: CircleAlert, className: 'border-alert/30 bg-alert/10 text-alert' },
 }
 
-/** Niveau d'alerte d'un fait, dit en toutes lettres et pas seulement par la couleur. */
-export function AlertBadge({ niveau }: { niveau: NiveauAlerte }) {
-  const { label, Icon, className } = NIVEAUX[niveau]
+/** Alert level of a fact, spelled out in words and not only by color. */
+export function AlertBadge({ level }: { level: AlertLevel }) {
+  const { label, Icon, className } = LEVELS[level]
   return (
     <span
       className={cn(

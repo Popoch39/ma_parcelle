@@ -6,12 +6,12 @@ const HOUR = 60 * 60 * 1000
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Ces données changent au mieux chaque semaine, et plusieurs API ont des quotas non
-      // documentés : on ne redemande pas une fiche déjà vue pendant la session.
+      // This data changes weekly at best, and several APIs have undocumented quotas: a report
+      // already seen during the session is not requested again.
       staleTime: 12 * HOUR,
       gcTime: 12 * HOUR,
       refetchOnWindowFocus: false,
-      // Seules les pannes passagères méritent un nouvel essai, pas une donnée introuvable.
+      // Only transient failures deserve a retry, not data that cannot be found.
       retry: (failureCount, error) => failureCount < 2 && isTransient(error),
     },
   },

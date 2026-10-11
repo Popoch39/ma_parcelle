@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button'
 
 interface CopyButtonProps {
   text: string
-  /** Ce que l'on copie, pour le libellé accessible : « Copier l'IDU ». */
+  /** What is being copied, for the accessible label: « Copier l'IDU ». */
   label: string
 }
 
 type CopyState = 'idle' | 'copied' | 'failed'
 
-/** Copie un texte dans le presse-papiers en un clic et le confirme brièvement. */
+/** Copies a text to the clipboard in one click and briefly confirms it. */
 export function CopyButton({ text, label }: CopyButtonProps) {
   const [state, setState] = useState<CopyState>('idle')
 
@@ -23,7 +23,7 @@ export function CopyButton({ text, label }: CopyButtonProps) {
   const copy = () => {
     navigator.clipboard.writeText(text).then(
       () => setState('copied'),
-      // Refus de permission ou contexte non sécurisé : on le dit plutôt que de laisser croire.
+      // Permission denied or insecure context: say so rather than let the user believe it worked.
       () => setState('failed'),
     )
   }

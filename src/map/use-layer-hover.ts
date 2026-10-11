@@ -3,15 +3,15 @@ import { useEffect } from 'react'
 import { useMapStore } from '@/stores/map-store'
 
 /**
- * Appelle `onHover` avec l'objet sous le pointeur sur une couche, à chaque objet survolé, puis
- * avec `null` quand le pointeur quitte la couche.
+ * Calls `onHover` with the feature under the pointer on a layer, for each hovered feature, then
+ * with `null` when the pointer leaves the layer.
  */
 export function useLayerHover(layerId: string, onHover: (feature: MapGeoJSONFeature | null) => void): void {
   const map = useMapStore((state) => state.map)
 
   useEffect(() => {
     if (!map) return
-    // `mousemove` plutôt que `mouseenter` : passer d'un objet à son voisin ne quitte pas la couche.
+    // `mousemove` rather than `mouseenter`: moving from a feature to its neighbor does not leave the layer.
     const move = (event: MapLayerMouseEvent) => onHover(event.features?.[0] ?? null)
     const leave = () => onHover(null)
     map.on('mousemove', layerId, move)

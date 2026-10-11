@@ -1,50 +1,50 @@
 import type { MultiPolygon } from 'geojson'
-import { empriseOf, type Emprise } from '@/lib/geo'
-import { arrondissementOf, formatReferenceCadastrale, parseIdu } from '@/lib/idu'
+import { bboxOf, type BBox } from '@/lib/geo'
+import { districtOf, formatCadastralReference, parseIdu } from '@/lib/idu'
 import { fetchJson, type Fetch } from './fetch-json'
 import type { LoadOptions } from './loader'
 
-const API_CARTO_PARCELLE = 'https://apicarto.ign.fr/api/cadastre/parcelle'
+const API_CARTO_PARCEL = 'https://apicarto.ign.fr/api/cadastre/parcelle'
 
-/** Parcelle telle que le cadastre la décrit : c'est le modèle du bloc Cadastre. */
-export interface Parcelle {
+/** Parcel as the cadastre describes it: this is the Cadastre block's model. */
+export interface Parcel {
   idu: string
-  /** Désignation des actes, ex. « 33063 KJ 33 ». */
-  referenceCadastrale: string
-  /** Surface cadastrale, en m². */
-  contenance: number
-  commune: { nom: string; codeInsee: string }
-  /** Seulement à Paris, Lyon et Marseille. */
-  arrondissement: { nom: string; codeInsee: string } | null
-  prefixe: string
+  /** Designation used in deeds, e.g. « 33063 KJ 33 ». */
+  cadastralReference: string
+  /** Cadastral area, in m². */
+  area: number
+  municipality: { name: string; inseeCode: string }
+  /** Only in Paris, Lyon and Marseille. */
+  district: { name: string; inseeCode: string } | null
+  prefix: string
   section: string
-  feuille: number
-  numero: string
-  geometrie: MultiPolygon
-  emprise: Emprise
+  sheet: number
+  number: string
+  geometry: MultiPolygon
+  bbox: BBox
 }
 
-export type ParcelleErrorKind = 'idu-invalide' | 'introuvable'
+export type ParcelErrorKind = 'invalid-idu' | 'not-found'
 
-/** Parcelle impossible à désigner. Le message s'affiche tel quel dans la fiche. */
-export class ParcelleError extends Error {
-  readonly kind: ParcelleErrorKind
+/** Parcel that cannot be designated. The message is shown as is in the report. */
+export class ParcelError extends Error {
+  readonly kind: ParcelErrorKind
   readonly idu: string
 
-  constructor(kind: ParcelleErrorKind, idu: string) {
+  constructor(kind: ParcelErrorKind, idu: string) {
     super(
-      kind === 'idu-invalide'
+      kind === 'invalid-idu'
         ? `« ${idu} » n’est pas un IDU valide (14 caractères, ex. 75107000BQ0003).`
         : `Le cadastre ne connaît aucune parcelle ${idu}.`,
     )
-    this.name = 'ParcelleError'
+    this.name = 'ParcelError'
     this.kind = kind
     this.idu = idu
   }
 }
 
-/** Réponse brute d'API Carto `cadastre/parcelle`. */
-interface ParcelleApiCarto {
+/** Raw response of API Carto `cadastre/parcelle`. */
+interface ParcelApiCarto {
   features: Array<{
     geometry: MultiPolygon
     properties: {
@@ -61,72 +61,72 @@ interface ParcelleApiCarto {
 }
 
 /**
- * Chargeur du bloc Cadastre : la parcelle désignée par son IDU. Les autres blocs partent de
- * la parcelle qu'il renvoie (voir `BlocLoader`).
+ * Loader of the Cadastre block: the parcel designated by its IDU. The other blocks start from
+ * the parcel it returns (see `BlockLoader`).
  */
-export async function loadParcelle(fetch: Fetch, idu: string, { signal }: LoadOptions = {}): Promise<Parcelle> {
+export async function loadParcel(fetch: Fetch, idu: string, { signal }: LoadOptions = {}): Promise<Parcel> {
   const parts = parseIdu(idu)
-  if (!parts) throw new ParcelleError('idu-invalide', idu)
-  const parcelles = await findParcelles(fetch, referenceParams(parts), { signal })
-  const parcelle = parcelles.find((candidate) => candidate.idu === idu)
-  if (!parcelle) throw new ParcelleError('introuvable', idu)
-  return parcelle
+  if (!parts) throw new ParcelError('invalid-idu', idu)
+  const parcels = await findParcels(fetch, referenceParams(parts), { signal })
+  const parcel = parcels.find((candidate) => candidate.idu === idu)
+  if (!parcel) throw new ParcelError('not-found', idu)
+  return parcel
 }
 
 /**
- * Paramètres API Carto d'une référence cadastrale. Une commune absorbée peut réutiliser la
- * même section et le même numéro : sans préfixe, toutes celles de la commune répondent.
+ * API Carto parameters of a cadastral reference. An absorbed municipality may reuse the
+ * same section and the same number: without a prefix, all those of the municipality respond.
  */
-export function referenceParams({ codeInsee, prefixe, section, numero }: {
-  codeInsee: string
-  prefixe: string | null
+export function referenceParams({ inseeCode, prefix, section, number }: {
+  inseeCode: string
+  prefix: string | null
   section: string
-  numero: string
+  number: string
 }): URLSearchParams {
-  const arrondissement = arrondissementOf(codeInsee)
+  const district = districtOf(inseeCode)
   const params = new URLSearchParams(
-    arrondissement
-      ? { code_insee: arrondissement.codeCommune, code_arr: arrondissement.codeArr }
-      : { code_insee: codeInsee },
+    district
+      ? { code_insee: district.municipalityCode, code_arr: district.districtCode }
+      : { code_insee: inseeCode },
   )
-  if (prefixe) params.set('com_abs', prefixe)
+  if (prefix) params.set('com_abs', prefix)
   params.set('section', section)
-  params.set('numero', numero)
+  params.set('numero', number)
   return params
 }
 
 /**
- * Parcelles qu'API Carto renvoie pour ces paramètres : par référence (`code_insee`,
- * `code_arr`, `com_abs`, `section`, `numero`) ou par géométrie (`geom`).
+ * Parcels that API Carto returns for these parameters: by reference (`code_insee`,
+ * `code_arr`, `com_abs`, `section`, `numero`) or by geometry (`geom`).
  */
-export async function findParcelles(
+export async function findParcels(
   fetch: Fetch,
   params: URLSearchParams,
   { signal }: LoadOptions = {},
-): Promise<Parcelle[]> {
-  const body = await fetchJson<ParcelleApiCarto>(fetch, `${API_CARTO_PARCELLE}?${params}`, { signal })
-  return body.features.map(parcelleOf)
+): Promise<Parcel[]> {
+  const body = await fetchJson<ParcelApiCarto>(fetch, `${API_CARTO_PARCEL}?${params}`, { signal })
+  return body.features.map(parcelOf)
 }
 
-function parcelleOf(feature: ParcelleApiCarto['features'][number]): Parcelle {
+function parcelOf(feature: ParcelApiCarto['features'][number]): Parcel {
   const { properties } = feature
   const parts = parseIdu(properties.idu)
-  if (!parts) throw new ParcelleError('idu-invalide', properties.idu)
-  const arrondissement = arrondissementOf(parts.codeInsee)
+  if (!parts) throw new ParcelError('invalid-idu', properties.idu)
+  const district = districtOf(parts.inseeCode)
   return {
     idu: properties.idu,
-    referenceCadastrale: formatReferenceCadastrale(parts),
-    contenance: properties.contenance,
-    commune: { nom: properties.nom_com, codeInsee: properties.code_insee },
-    arrondissement: arrondissement && {
-      nom: `${properties.nom_com} ${arrondissement.rang}${arrondissement.rang === 1 ? 'er' : 'e'} arrondissement`,
-      codeInsee: arrondissement.codeInsee,
+    cadastralReference: formatCadastralReference(parts),
+    area: properties.contenance,
+    municipality: { name: properties.nom_com, inseeCode: properties.code_insee },
+    district: district && {
+      name: `${properties.nom_com} ${district.number}${district.number === 1 ? 'er' : 'e'} arrondissement`,
+      inseeCode: district.inseeCode,
     },
-    prefixe: properties.com_abs,
+    prefix: properties.com_abs,
     section: properties.section,
-    feuille: properties.feuille,
-    numero: properties.numero,
-    geometrie: feature.geometry,
-    emprise: empriseOf(feature.geometry),
+    sheet: properties.feuille,
+    number: properties.numero,
+    geometry: feature.geometry,
+    bbox: bboxOf(feature.geometry),
   }
 }
