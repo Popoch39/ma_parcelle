@@ -4,6 +4,8 @@ Carte web plein écran pour tout savoir d'une parcelle cadastrale. On cherche un
 
 Gratuit, sans compte et sans serveur applicatif : le navigateur appelle directement les API publiques ([ADR 0001](docs/adr/0001-application-client-relais-en-secours.md)). Le vocabulaire du domaine est défini dans [GLOSSARY.md](GLOSSARY.md).
 
+Le code est entièrement en anglais (identifiants, commentaires, tests, noms de fichiers) ; seuls les textes affichés à l'utilisateur sont en français. Chaque terme du glossaire donne son nom de code.
+
 ## Stack
 
 - React 19 (React Compiler), Vite 8, TypeScript
@@ -33,7 +35,7 @@ Convention des fixtures :
 
 - une fixture est le corps JSON d'une vraie réponse, capturé avec `curl` sur l'API réelle, jamais écrit à la main ;
 - elle est tronquée au strict nécessaire pour le test (quelques entités), sans jamais modifier les valeurs restantes ;
-- elle est rangée dans `src/api/__fixtures__/<source>/<cas>.json`, le nom décrivant le cas (`search-20-avenue-de-segur.json`, `parcelle-code-insee-invalide-400.json`) ;
+- elle est rangée dans `src/api/__fixtures__/<source>/<cas>.json`, le nom reprenant la ressource de l'API telle quelle puis décrivant le cas en anglais (`search-20-avenue-de-segur.json`, `parcelle-invalid-insee-code-400.json`) ;
 - le statut HTTP d'une réponse en erreur est donné par le test, pas stocké dans la fixture.
 
 ## Sources de données
