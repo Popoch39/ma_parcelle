@@ -17,7 +17,7 @@ export function SectionError({ error, onRetry }: SectionErrorProps) {
         {errorMessage(error)}
       </p>
       {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry}>
+        <Button variant="outline" size="sm" onClick={onRetry} className="print:hidden">
           Réessayer
         </Button>
       )}

@@ -15,11 +15,13 @@ export function SourceLink({ href, label, date }: SourceLinkProps) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-1 rounded-sm underline-offset-2 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="inline-flex items-center gap-1 rounded-sm underline-offset-2 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none print:inline"
     >
       Source : {label}
       {date && <span className="tabular-nums"> · {date}</span>}
-      <ExternalLink aria-hidden className="size-3" />
+      {/* Sur papier, le lien ne se suit pas : l'adresse s'écrit en clair. */}
+      <span className="hidden break-all print:inline"> · {href}</span>
+      <ExternalLink aria-hidden className="size-3 print:hidden" />
       <span className="sr-only">(nouvel onglet)</span>
     </a>
   )

@@ -14,6 +14,25 @@ interface UiState {
   /** Hauteur du bottom sheet de la fiche sur mobile. */
   sheetCran: Cran
   setSheetCran: (cran: Cran) => void
+  /**
+   * Impression de la fiche en cours, de sa préparation à la fermeture de la fenêtre
+   * d'impression : la carte passe en clair et la fiche imprimée se monte, listes dépliées.
+   */
+  impression: Impression | null
+  setImpression: (impression: Impression | null) => void
+}
+
+export interface Impression {
+  date: Date
+  /** Image de la carte, ou null tant qu'elle n'est pas capturée ou si elle n'a pas pu l'être. */
+  carte: CarteImprimee | null
+}
+
+export interface CarteImprimee {
+  /** Image en data URL. */
+  image: string
+  /** Mentions des fonds et calques de la carte, dues avec l'image. */
+  attribution: string
 }
 
 const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
@@ -27,6 +46,8 @@ export const useUiStore = create<UiState>()(
       setTheme: (theme) => set({ theme }),
       sheetCran: 'apercu',
       setSheetCran: (sheetCran) => set({ sheetCran }),
+      impression: null,
+      setImpression: (impression) => set({ impression }),
     }),
     {
       name: 'ma-parcelle:interface',
@@ -60,5 +81,14 @@ export function applyThemeToDocument(): () => void {
   return useUiStore.subscribe(apply)
 }
 
-/** Thème effectivement affiché : c'est lui que suivent le fond de carte et les couleurs des calques. */
-export const useColorScheme = () => useUiStore((state) => colorSchemeOf(state.theme, state.systemColorScheme))
+/**
+ * Thème effectivement affiché : c'est lui que suivent le fond de carte et les couleurs des calques.
+ * Le reste de l'interface passe en clair à l'impression par la feuille de style.
+ */
+export const useColorScheme = () =>
+  useUiStore((state) =>
+    colorSchemeOf(state.theme, state.systemColorScheme, { impression: state.impression !== null }),
+  )
+
+/** Vrai pendant une impression : les blocs déplient alors leurs listes. */
+export const useImpressionEnCours = () => useUiStore((state) => state.impression !== null)

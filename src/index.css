@@ -5,13 +5,16 @@
 /*
  * Le thème suit prefers-color-scheme sans JavaScript (pas de flash au chargement) :
  * chaque token est un light-dark() résolu selon color-scheme. Une classe `.light` ou
- * `.dark` sur <html> force le thème ; le variant `dark:` suit les deux mécanismes.
+ * `.dark` sur <html> force le thème ; le variant `dark:` suit les deux mécanismes, à l'écran
+ * seulement : l'impression est toujours en clair (voir plus bas).
  */
 @custom-variant dark {
-    &:where(.dark, .dark *) {
-        @slot;
+    @media screen {
+        &:where(.dark, .dark *) {
+            @slot;
+        }
     }
-    @media (prefers-color-scheme: dark) {
+    @media screen and (prefers-color-scheme: dark) {
         &:where(:root:not(.light), :root:not(.light) *) {
             @slot;
         }
@@ -118,6 +121,37 @@
 
 :root.dark {
     color-scheme: dark;
+}
+
+/*
+ * Impression : la fiche imprimée (`FicheImprimee`) remplace l'écran, toujours en clair, en A4
+ * portrait. Sans fiche à imprimer, la page s'imprime telle quelle.
+ */
+@page {
+    size: A4 portrait;
+    margin: 12mm;
+}
+
+@media print {
+    :root,
+    :root.dark {
+        color-scheme: light;
+        /* Les étiquettes DPE et les niveaux d'alerte tiennent à leurs couleurs de fond. */
+        print-color-adjust: exact;
+    }
+
+    body:has(.fiche-imprimee) #root > :not(.fiche-imprimee) {
+        display: none;
+    }
+
+    /* Un bloc court ne se coupe pas entre deux pages ; un long se coupe entre ses lignes. */
+    .fiche-imprimee :is(section, figure, li, [role='note'], dl > div) {
+        break-inside: avoid;
+    }
+
+    .fiche-imprimee :is(h1, h2, h3) {
+        break-after: avoid;
+    }
 }
 
 /*

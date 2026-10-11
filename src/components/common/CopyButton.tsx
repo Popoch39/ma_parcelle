@@ -30,7 +30,14 @@ export function CopyButton({ text, label }: CopyButtonProps) {
 
   const status = state === 'copied' ? 'Copié' : state === 'failed' ? 'Copie impossible' : ''
   return (
-    <Button variant="ghost" size="icon-xs" onClick={copy} aria-label={label} title={status || label}>
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      onClick={copy}
+      aria-label={label}
+      title={status || label}
+      className="print:hidden"
+    >
       {state === 'copied' ? <Check aria-hidden /> : <Copy aria-hidden />}
       <span role="status" className="sr-only">
         {status}

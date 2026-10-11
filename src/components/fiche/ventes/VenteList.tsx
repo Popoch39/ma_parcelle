@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import type { Vente } from '@/lib/ventes'
+import { useImpressionEnCours } from '@/stores/ui-store'
 import { VenteRow } from './VenteRow'
 
 // Un quartier dense compte plus d'un millier de ventes en cinq ans : on les déroule par paquets.
@@ -16,9 +17,10 @@ interface VenteListProps {
   onOuvrir: (vente: Vente) => void
 }
 
-/** Toutes les ventes du voisinage, de la plus récente à la plus ancienne, exclues comprises. */
+/** Toutes les ventes du voisinage, de la plus récente à la plus ancienne, exclues comprises, toutes à l'impression. */
 export function VenteList({ ventes, survolee, onSurvol, onOuvrir }: VenteListProps) {
-  const [affichees, setAffichees] = useState(PAR_PAQUET)
+  const [deroulees, setDeroulees] = useState(PAR_PAQUET)
+  const affichees = useImpressionEnCours() ? ventes.length : deroulees
   const restantes = ventes.length - affichees
   return (
     <div className="flex flex-col gap-1.5 text-sm">
@@ -41,7 +43,7 @@ export function VenteList({ ventes, survolee, onSurvol, onOuvrir }: VenteListPro
         </ul>
       )}
       {restantes > 0 && (
-        <Button variant="outline" size="sm" className="self-start" onClick={() => setAffichees(affichees + PAR_PAQUET)}>
+        <Button variant="outline" size="sm" className="self-start" onClick={() => setDeroulees(deroulees + PAR_PAQUET)}>
           Afficher {Math.min(restantes, PAR_PAQUET)} ventes de plus
         </Button>
       )}

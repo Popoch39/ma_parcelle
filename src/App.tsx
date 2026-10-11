@@ -1,3 +1,4 @@
+import { FicheImprimee } from '@/components/impression/FicheImprimee'
 import { FichePanel } from '@/components/panel/FichePanel'
 import { SearchBar } from '@/components/search/SearchBar'
 import { LocateButton } from '@/map/controls/LocateButton'
@@ -22,6 +23,7 @@ function App() {
         <SearchBar />
         <LocateButton />
       </div>
+      <FicheImprimee />
     </>
   )
 }
