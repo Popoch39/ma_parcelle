@@ -1,4 +1,5 @@
 import type { BlocLoader } from '@/api/loader'
+import type { BlocId } from '@/components/fiche/blocs'
 
 /** Niveau d'attention d'un fait de la synthèse, du plus neutre au plus pressant. */
 export type NiveauAlerte = 'information' | 'vigilance' | 'alerte'
@@ -29,7 +30,7 @@ export interface FaitSynthese {
  */
 export interface ContributionSynthese {
   /** Clé du bloc, celle de sa query `useParcelleBloc(bloc, …)`. */
-  bloc: string
+  bloc: BlocId
   charger: BlocLoader<unknown>
   // En méthode, le paramètre reste bivariant : la liste des contributions accueille des blocs
   // aux données de types différents. `contribution()` garantit que `faits` ne reçoit que ce que
@@ -39,7 +40,7 @@ export interface ContributionSynthese {
 
 /** Déclare la contribution d'un bloc, en vérifiant que ses faits se lisent dans ce qu'il charge. */
 export function contribution<Donnees>(definition: {
-  bloc: string
+  bloc: BlocId
   charger: BlocLoader<Donnees>
   faits: (donnees: Donnees) => FaitSynthese[]
 }): ContributionSynthese {

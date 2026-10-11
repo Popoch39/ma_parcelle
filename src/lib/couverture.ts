@@ -1,5 +1,5 @@
-import type { MultiPolygon, Polygon } from 'geojson'
-import { empriseOf, type Emprise } from './geo'
+import type { MultiPolygon } from 'geojson'
+import { empriseOf, type Contour, type Emprise } from './geo'
 
 // Points par côté de la grille posée sur l'emprise de la surface mesurée : au-delà, la mesure
 // ne gagne plus rien d'utile pour distinguer un liseré d'une vraie part de parcelle.
@@ -13,7 +13,7 @@ type Arete = [number, number, number, number]
  * de 0 à 1. La mesure est estimée sur une grille de points de la surface : assez précise pour
  * écarter les recouvrements de bord dus aux décalages de numérisation entre cadastre et zonage.
  */
-export function mesureCouverture(surface: MultiPolygon): (couvrante: Polygon | MultiPolygon) => number {
+export function mesureCouverture(surface: MultiPolygon): (couvrante: Contour) => number {
   const emprise = empriseOf(surface)
   const [ouest, sud, est, nord] = emprise
   const bordsSurface = aretesUtiles(surface, emprise)
@@ -40,7 +40,7 @@ export function mesureCouverture(surface: MultiPolygon): (couvrante: Polygon | M
  * l'emprise. Une zone peut compter des dizaines de milliers de sommets : ne garder que
  * celles-ci rend la mesure quasi instantanée.
  */
-function aretesUtiles(geometrie: Polygon | MultiPolygon, [ouest, sud, , nord]: Emprise): Arete[] {
+function aretesUtiles(geometrie: Contour,[ouest, sud, , nord]: Emprise): Arete[] {
   const anneaux = geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()
   const aretes: Arete[] = []
   for (const anneau of anneaux) {

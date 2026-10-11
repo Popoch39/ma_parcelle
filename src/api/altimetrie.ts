@@ -1,3 +1,4 @@
+import type { LonLat } from '@/lib/geo'
 import { fetchJson, type Fetch } from './fetch-json'
 import type { LoadOptions } from './loader'
 
@@ -11,10 +12,10 @@ interface ElevationIgn {
   elevations: number[]
 }
 
-/** Altitude du sol en un point [lon, lat], en mètres, d'après le RGE ALTI ; null hors couverture. */
+/** Altitude du sol en un point, en mètres, d'après le RGE ALTI ; null hors couverture. */
 export async function loadAltitude(
   fetch: Fetch,
-  [lon, lat]: [number, number],
+  { lon, lat }: LonLat,
   { signal }: LoadOptions = {},
 ): Promise<number | null> {
   const params = new URLSearchParams({

@@ -1,5 +1,5 @@
-import type { MultiPolygon, Point, Polygon } from 'geojson'
-import { centroideOf, distanceBetweenPolygons, distanceToPolygon } from '@/lib/geo'
+import type { Point } from 'geojson'
+import { centroideOf, distanceBetweenPolygons, distanceToPolygon, type Contour } from '@/lib/geo'
 import type { NiveauAlerte } from '@/lib/synthese/synthese'
 import type { Parcelle } from './cadastre'
 import { fetchJson, fetchJsonOuVide } from './fetch-json'
@@ -111,7 +111,7 @@ interface SitePollueGeorisques {
   /** Instruction : « En cours », « Clôturée ». */
   statut?: string | null
   fiche_risque: string | null
-  geom: Point | Polygon | MultiPolygon
+  geom: Point | Contour
 }
 
 /** Réponse brute de `ssp` : un objet par sous-base, chacune dans son enveloppe. */
@@ -294,7 +294,7 @@ const SOURCES: SourceRisque[] = [
 
 /** Chargeur du bloc Risques : ce que Géorisques dit de l'emplacement de la parcelle et de sa commune. */
 export const loadRisques: BlocLoader<RisquesBloc> = async (fetch, parcelle, { signal } = {}) => {
-  const [lon, lat] = centroideOf(parcelle.geometrie)
+  const { lon, lat } = centroideOf(parcelle.geometrie)
   // Au-delà de 6 décimales (10 cm), la précision serait illusoire. Géorisques attend la longitude d'abord.
   const latlon = `latlon=${lon.toFixed(6)},${lat.toFixed(6)}`
   let ssp: Promise<SspGeorisques> | undefined
@@ -439,7 +439,7 @@ function mouvementsTerrain(parcelle: Parcelle, reponse: Enveloppe<MouvementTerra
 }
 
 /** Distance d'un site (point ou emprise) à la parcelle, en mètres. */
-function distanceDuSite(parcelle: Parcelle, geom: Point | Polygon | MultiPolygon): number {
+function distanceDuSite(parcelle: Parcelle, geom: Point | Contour): number {
   if (geom.type === 'Point') {
     const [lon, lat] = geom.coordinates
     return distanceToPolygon({ lon, lat }, parcelle.geometrie)

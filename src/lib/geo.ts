@@ -3,6 +3,9 @@ import type { MultiPolygon, Polygon } from 'geojson'
 /** Rectangle englobant [ouest, sud, est, nord], en degrés WGS 84 (ordre GeoJSON et MapLibre). */
 export type Emprise = [number, number, number, number]
 
+/** Contour d'une surface : parcelle, zone, emprise de servitude… */
+export type Contour = Polygon | MultiPolygon
+
 /** Point WGS 84, en degrés. */
 export interface LonLat {
   lon: number
@@ -21,7 +24,7 @@ export function distanceBetween(a: LonLat, b: LonLat): number {
  * Distance en mètres d'un point au bord le plus proche d'un polygone. Approximation plane,
  * juste à l'échelle d'une rue ou d'un quartier.
  */
-export function distanceToBoundary(point: LonLat, geometrie: Polygon | MultiPolygon): number {
+export function distanceToBoundary(point: LonLat, geometrie: Contour): number {
   const kx = METRES_PAR_DEGRE * Math.cos((point.lat * Math.PI) / 180)
   const toMetres = ([lon, lat]: number[]) => [(lon - point.lon) * kx, (lat - point.lat) * METRES_PAR_DEGRE]
   const anneaux = geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()
@@ -66,7 +69,7 @@ export function circleAround(point: LonLat, rayon: number, sommets = 32): Polygo
 }
 
 /** Point dans un polygone ou un multipolygone, par la règle pair-impair : les trous sont exclus d'office. */
-export function containsPoint(geometrie: Polygon | MultiPolygon, { lon, lat }: LonLat): boolean {
+export function containsPoint(geometrie: Contour, { lon, lat }: LonLat): boolean {
   const anneaux = geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()
   let dedans = false
   for (const anneau of anneaux) {
@@ -80,7 +83,7 @@ export function containsPoint(geometrie: Polygon | MultiPolygon, { lon, lat }: L
 }
 
 /** Rectangle englobant d'un polygone ou d'un multipolygone. */
-export function empriseOf(geometrie: Polygon | MultiPolygon): Emprise {
+export function empriseOf(geometrie: Contour): Emprise {
   const anneaux = geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()
   const emprise: Emprise = [Infinity, Infinity, -Infinity, -Infinity]
   for (const [lon, lat] of anneaux.flat()) {
@@ -93,10 +96,10 @@ export function empriseOf(geometrie: Polygon | MultiPolygon): Emprise {
 }
 
 /**
- * Centroïde (barycentre des surfaces) d'un polygone ou d'un multipolygone, en [lon, lat].
+ * Centroïde (barycentre des surfaces) d'un polygone ou d'un multipolygone.
  * Calcul plan en degrés : l'erreur est négligeable à l'échelle d'une parcelle.
  */
-export function centroideOf(geometrie: Polygon | MultiPolygon): [number, number] {
+export function centroideOf(geometrie: Contour): LonLat {
   const polygones = geometrie.type === 'Polygon' ? [geometrie.coordinates] : geometrie.coordinates
   // Coordonnées relatives au premier sommet : en absolu, les produits croisés de valeurs
   // proches s'annulent et perdent leur précision.
@@ -127,11 +130,11 @@ export function centroideOf(geometrie: Polygon | MultiPolygon): [number, number]
       my += signe * cy
     })
   }
-  return [x0 + mx / (3 * aire), y0 + my / (3 * aire)]
+  return { lon: x0 + mx / (3 * aire), lat: y0 + my / (3 * aire) }
 }
 
 /** Distance en mètres d'un point à un polygone : nulle quand il est dedans. */
-export function distanceToPolygon(point: LonLat, geometrie: Polygon | MultiPolygon): number {
+export function distanceToPolygon(point: LonLat, geometrie: Contour): number {
   return containsPoint(geometrie, point) ? 0 : distanceToBoundary(point, geometrie)
 }
 
@@ -140,8 +143,8 @@ export function distanceToPolygon(point: LonLat, geometrie: Polygon | MultiPolyg
  * quand l'un a un sommet dans l'autre. Deux polygones qui se croisent sans qu'aucun sommet de
  * l'un ne soit dans l'autre sont rares à l'échelle d'une parcelle.
  */
-export function distanceBetweenPolygons(a: Polygon | MultiPolygon, b: Polygon | MultiPolygon): number {
-  const sommets = (geometrie: Polygon | MultiPolygon) =>
+export function distanceBetweenPolygons(a: Contour, b: Contour): number {
+  const sommets = (geometrie: Contour) =>
     (geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()).flat()
   let distance = Infinity
   for (const [source, cible] of [[a, b], [b, a]]) {

@@ -93,10 +93,7 @@ function typeOf(codtypbien: string): TypeBien {
  * commun ne tomberait sur aucune d'elles.
  */
 function positionOf(geometrie: MultiPolygon, centre: LonLat): LonLat {
-  const points = geometrie.coordinates.map((coordinates) => {
-    const [lon, lat] = centroideOf({ type: 'Polygon', coordinates })
-    return { lon, lat }
-  })
+  const points = geometrie.coordinates.map((coordinates) => centroideOf({ type: 'Polygon', coordinates }))
   return points.reduce((plusProche, point) =>
     distanceBetween(centre, point) < distanceBetween(centre, plusProche) ? point : plusProche,
   )

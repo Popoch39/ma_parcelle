@@ -34,9 +34,8 @@ const SOURCES: readonly VentesSource[] = [cerema, datagouv]
 
 /** Chargeur du bloc Ventes : les ventes DVF du voisinage de la parcelle et leur prix médian au m². */
 export const loadVentes: BlocLoader<VentesBloc> = async (fetch, parcelle, { signal } = {}) => {
-  const [lon, lat] = centroideOf(parcelle.geometrie)
   const voisinage: Voisinage = {
-    centre: { lon, lat },
+    centre: centroideOf(parcelle.geometrie),
     rayon: RAYON_VOISINAGE,
     depuis: new Date().getFullYear() - ANNEES_DE_VENTES,
   }

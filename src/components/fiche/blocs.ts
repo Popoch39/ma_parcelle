@@ -15,11 +15,14 @@ export interface BlocProps {
  * Blocs de la fiche, dans leur ordre d'affichage. Ajouter, retirer ou déplacer un bloc =
  * une ligne. Chaque bloc charge et échoue seul (`<Bloc>Section`).
  */
-export const BLOCS: ReadonlyArray<{ id: string; Section: ComponentType<BlocProps> }> = [
+export const BLOCS = [
   { id: 'cadastre', Section: CadastreSection },
   { id: 'urbanisme', Section: UrbanismeSection },
   { id: 'risques', Section: RisquesSection },
   { id: 'ventes', Section: VentesSection },
   { id: 'batiment', Section: BatimentSection },
   { id: 'dpe', Section: DpeSection },
-]
+] as const satisfies ReadonlyArray<{ id: string; Section: ComponentType<BlocProps> }>
+
+/** Clé d'un bloc : celle de sa query, de sa contribution à la synthèse et de son état déplié. */
+export type BlocId = (typeof BLOCS)[number]['id']

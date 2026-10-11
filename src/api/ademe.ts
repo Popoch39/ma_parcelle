@@ -91,7 +91,7 @@ export const loadDpe: BlocLoader<DpeBloc> = async (fetch, parcelle, { signal } =
   if (dansLaParcelle.length > 0) return blocOf('parcelle', dansLaParcelle.map(dpeOf), emprise.limite)
 
   // Triés par distance par défaut : si la limite tombe, ce sont les plus lointains qui manquent.
-  const [lon, lat] = centroideOf(parcelle.geometrie)
+  const { lon, lat } = centroideOf(parcelle.geometrie)
   const voisinage = await lignesDe(
     fetch,
     new URLSearchParams({ geo_distance: `${lon},${lat},${RAYON_VOISINAGE}m`, size: TAILLE_PAGE, select: COLONNES }),
