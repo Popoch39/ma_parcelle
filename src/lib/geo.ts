@@ -129,3 +129,26 @@ export function centroideOf(geometrie: Polygon | MultiPolygon): [number, number]
   }
   return [x0 + mx / (3 * aire), y0 + my / (3 * aire)]
 }
+
+/** Distance en mètres d'un point à un polygone : nulle quand il est dedans. */
+export function distanceToPolygon(point: LonLat, geometrie: Polygon | MultiPolygon): number {
+  return containsPoint(geometrie, point) ? 0 : distanceToBoundary(point, geometrie)
+}
+
+/**
+ * Distance en mètres entre deux polygones, mesurée de sommet à bord dans les deux sens : nulle
+ * quand l'un a un sommet dans l'autre. Deux polygones qui se croisent sans qu'aucun sommet de
+ * l'un ne soit dans l'autre sont rares à l'échelle d'une parcelle.
+ */
+export function distanceBetweenPolygons(a: Polygon | MultiPolygon, b: Polygon | MultiPolygon): number {
+  const sommets = (geometrie: Polygon | MultiPolygon) =>
+    (geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()).flat()
+  let distance = Infinity
+  for (const [source, cible] of [[a, b], [b, a]]) {
+    for (const [lon, lat] of sommets(source)) {
+      distance = Math.min(distance, distanceToPolygon({ lon, lat }, cible))
+      if (distance === 0) return 0
+    }
+  }
+  return distance
+}

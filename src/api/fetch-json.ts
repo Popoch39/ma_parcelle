@@ -42,6 +42,22 @@ export async function fetchText(fetch: Fetch, url: string, options: FetchJsonOpt
   return fetchBody(fetch, url, (response) => response.text(), options)
 }
 
+/**
+ * Comme `fetchJson`, pour une API qui répond 200 avec un corps vide quand elle n'a rien à
+ * dire (Géorisques `rga`) : renvoie alors `null`.
+ */
+export async function fetchJsonOuVide<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T | null> {
+  return fetchBody(
+    fetch,
+    url,
+    async (response) => {
+      const text = await response.text()
+      return text.trim() === '' ? null : JSON.parse(text)
+    },
+    options,
+  )
+}
+
 async function fetchBody<T>(
   fetch: Fetch,
   url: string,
