@@ -11,6 +11,7 @@ export function BatimentSection({ idu }: BlocProps) {
   return (
     <Section
       title="Bâtiment"
+      bloc="batiment"
       source={
         <div className="flex flex-col items-start gap-1">
           <SourceLink

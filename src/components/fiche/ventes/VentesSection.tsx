@@ -29,6 +29,7 @@ export function VentesSection({ idu }: BlocProps) {
   return (
     <Section
       title="Ventes"
+      bloc="ventes"
       source={
         <SourceLink href={source.href} label={source.label} date={ventes.data && `depuis ${ventes.data.depuis}`} />
       }

@@ -20,6 +20,7 @@ export function UrbanismeSection({ idu }: BlocProps) {
   return (
     <Section
       title="Urbanisme"
+      bloc="urbanisme"
       source={<SourceLink href={GEOPORTAIL_URBANISME} label="Géoportail de l’urbanisme" />}
     >
       <BlocQueryState query={urbanisme} rows={6}>

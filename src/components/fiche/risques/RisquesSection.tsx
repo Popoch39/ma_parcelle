@@ -11,6 +11,7 @@ export function RisquesSection({ idu }: BlocProps) {
   return (
     <Section
       title="Risques"
+      bloc="risques"
       source={
         <SourceLink href="https://www.georisques.gouv.fr/" label="Géorisques (ministère de la Transition écologique, BRGM)" />
       }

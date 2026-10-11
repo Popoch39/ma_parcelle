@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { BlocId } from '@/components/fiche/blocs'
 import type { Cran } from '@/lib/bottom-sheet'
 import { colorSchemeOf, persistedTheme, type Theme } from './theme'
 
@@ -14,6 +15,9 @@ interface UiState {
   /** Hauteur du bottom sheet de la fiche sur mobile. */
   sheetCran: Cran
   setSheetCran: (cran: Cran) => void
+  /** Blocs de la fiche repliés par l'utilisateur ; les autres sont dépliés. Gardés d'une fiche à l'autre. */
+  blocsReplies: BlocId[]
+  basculerBloc: (bloc: BlocId) => void
   /**
    * Impression de la fiche en cours, de sa préparation à la fermeture de la fenêtre
    * d'impression : la carte passe en clair et la fiche imprimée se monte, listes dépliées.
@@ -46,6 +50,13 @@ export const useUiStore = create<UiState>()(
       setTheme: (theme) => set({ theme }),
       sheetCran: 'apercu',
       setSheetCran: (sheetCran) => set({ sheetCran }),
+      blocsReplies: [],
+      basculerBloc: (bloc) =>
+        set(({ blocsReplies }) => ({
+          blocsReplies: blocsReplies.includes(bloc)
+            ? blocsReplies.filter((replie) => replie !== bloc)
+            : [...blocsReplies, bloc],
+        })),
       impression: null,
       setImpression: (impression) => set({ impression }),
     }),
@@ -92,3 +103,7 @@ export const useColorScheme = () =>
 
 /** Vrai pendant une impression : les blocs déplient alors leurs listes. */
 export const useImpressionEnCours = () => useUiStore((state) => state.impression !== null)
+
+/** Vrai si le bloc est replié à l'écran ; tout bloc est déplié à l'impression, comme ce qui n'est pas un bloc. */
+export const useBlocReplie = (bloc: BlocId | undefined) =>
+  useUiStore((state) => bloc !== undefined && state.impression === null && state.blocsReplies.includes(bloc))

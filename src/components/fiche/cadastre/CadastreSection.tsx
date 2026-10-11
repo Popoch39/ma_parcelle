@@ -11,6 +11,7 @@ export function CadastreSection({ idu }: BlocProps) {
   return (
     <Section
       title="Cadastre"
+      bloc="cadastre"
       source={<SourceLink href="https://www.cadastre.gouv.fr/" label="Plan cadastral (DGFiP, IGN)" />}
     >
       <BlocQueryState query={parcelle} rows={7}>

@@ -13,6 +13,7 @@ export function DpeSection({ idu }: BlocProps) {
   return (
     <Section
       title="DPE"
+      bloc="dpe"
       source={
         <SourceLink
           href="https://data.ademe.fr/datasets/dpe03existant"
