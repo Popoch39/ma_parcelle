@@ -4,9 +4,7 @@ import { useLayerClick } from '@/map/use-layer-click'
 import { useMapLayer } from '@/map/use-map-layer'
 import { useSelectionStore } from '@/stores/selection-store'
 import { useColorScheme } from '@/stores/ui-store'
-import { PCI_PARCELLE, PCI_SOURCE_ID, PCI_SOURCES } from './pci-source'
-
-const HIT_LAYER = 'parcelles-clic'
+import { PARCELLES_HIT_LAYER, PCI_PARCELLE, PCI_SOURCE_ID, PCI_SOURCES } from './pci-source'
 
 /** Contours des parcelles cadastrales ; un clic sélectionne la parcelle lue dans la tuile. */
 export function PciLayer() {
@@ -18,7 +16,7 @@ export function PciLayer() {
     layers: [
       // Remplissage invisible : il rend tout l'intérieur de la parcelle cliquable, pas seulement son contour.
       {
-        id: HIT_LAYER,
+        id: PARCELLES_HIT_LAYER,
         type: 'fill',
         source: PCI_SOURCE_ID,
         'source-layer': PCI_PARCELLE,
@@ -38,7 +36,7 @@ export function PciLayer() {
     ],
   })
 
-  useLayerClick(HIT_LAYER, (feature: MapGeoJSONFeature) => {
+  useLayerClick(PARCELLES_HIT_LAYER,(feature: MapGeoJSONFeature) => {
     const { idu } = feature.properties
     if (typeof idu === 'string') select(idu)
   })

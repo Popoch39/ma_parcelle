@@ -6,6 +6,9 @@ export const PCI_SOURCE_ID = 'pci'
 /** Couche des tuiles qui porte les parcelles et leurs attributs (`idu`, `section`, `contenance`…). */
 export const PCI_PARCELLE = 'parcelle'
 
+/** Couche la plus basse du calque Parcelles : une surcouche qui doit rester sous les parcelles se pose sous elle. */
+export const PARCELLES_HIT_LAYER = 'parcelles-clic'
+
 export const PCI_SOURCES: Record<string, SourceSpecification> = {
   [PCI_SOURCE_ID]: {
     type: 'vector',
