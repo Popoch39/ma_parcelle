@@ -6,6 +6,7 @@ import { useMapStore } from '@/stores/map-store'
 import { useSelectionStore } from '@/stores/selection-store'
 import { useColorScheme, type ColorScheme } from '@/stores/ui-store'
 import { PARCELLES_HIT_LAYER } from './pci-source'
+import { aplatEtContour } from './surface-layers'
 
 const SOURCE_ID = 'servitude'
 
@@ -35,19 +36,8 @@ function ServitudeOverlay({ idu, id }: { idu: string; id: string }) {
     sources: { [SOURCE_ID]: { type: 'geojson', data: collection } },
     below: PARCELLES_HIT_LAYER,
     layers: [
-      {
-        id: 'servitude-aplat',
-        type: 'fill',
-        source: SOURCE_ID,
-        paint: { 'fill-color': couleur, 'fill-opacity': 0.12 },
-      },
-      {
-        id: 'servitude-contour',
-        type: 'line',
-        source: SOURCE_ID,
-        layout: { 'line-join': 'round' },
-        paint: { 'line-color': couleur, 'line-width': 2 },
-      },
+      // Le contour trace aussi une servitude linéaire, comme l'alignement d'une voie.
+      ...aplatEtContour({ id: 'servitude', source: SOURCE_ID, couleur, opaciteAplat: 0.12, contour: { 'line-width': 2 } }),
       {
         id: 'servitude-point',
         type: 'circle',

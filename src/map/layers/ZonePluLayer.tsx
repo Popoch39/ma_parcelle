@@ -4,6 +4,7 @@ import { useUrbanisme } from '@/queries/urbanisme'
 import { useSelectionStore } from '@/stores/selection-store'
 import { useColorScheme, type ColorScheme } from '@/stores/ui-store'
 import { PARCELLES_HIT_LAYER } from './pci-source'
+import { aplatEtContour } from './surface-layers'
 
 const SOURCE_ID = 'zone-plu'
 
@@ -32,21 +33,13 @@ function ZonePluOverlay({ idu }: { idu: string }) {
     sources: { [SOURCE_ID]: { type: 'geojson', data: collection } },
     // Reposé à chaque sélection : sans cela, il passerait au-dessus de la parcelle.
     below: PARCELLES_HIT_LAYER,
-    layers: [
-      {
-        id: 'zone-plu-aplat',
-        type: 'fill',
-        source: SOURCE_ID,
-        paint: { 'fill-color': couleur, 'fill-opacity': 0.08 },
-      },
-      {
-        id: 'zone-plu-contour',
-        type: 'line',
-        source: SOURCE_ID,
-        layout: { 'line-join': 'round' },
-        paint: { 'line-color': couleur, 'line-width': 1.5, 'line-dasharray': [3, 2] },
-      },
-    ],
+    layers: aplatEtContour({
+      id: 'zone-plu',
+      source: SOURCE_ID,
+      couleur,
+      opaciteAplat: 0.08,
+      contour: { 'line-width': 1.5, 'line-dasharray': [3, 2] },
+    }),
   })
 
   return null
