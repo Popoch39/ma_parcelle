@@ -39,7 +39,7 @@ export async function resolveSearch(fetch: Fetch, saisie: string, options: LoadO
     case 'adresse': {
       const [adresse] = await findAdresses(fetch, query.texte, { ...options, limit: 1 })
       if (!adresse) throw new SearchError(`Aucune adresse ne correspond à « ${query.texte} ».`)
-      return resolvePoint(fetch, adresse.point, options)
+      return resolveAdresse(fetch, adresse.point, options)
     }
     case 'incomplete':
       throw new SearchError('Saisissez une adresse, une référence cadastrale (33063 AB 123), un IDU ou des coordonnées.')
@@ -49,10 +49,28 @@ export async function resolveSearch(fetch: Fetch, saisie: string, options: LoadO
 // Demi-côté du carré de repli : de quoi atteindre les deux rives d'une rue ordinaire.
 const REPLI_DEMI_COTE_M = 20
 
-/** La parcelle qui contient ce point (une adresse choisie, des coordonnées saisies). */
-export async function resolvePoint(fetch: Fetch, point: LonLat, options: LoadOptions = {}): Promise<Parcelle> {
+/** La parcelle qui contient ce point, ou null si aucune. */
+async function parcelleAuPoint(fetch: Fetch, point: LonLat, options: LoadOptions): Promise<Parcelle | null> {
   const geom: Point = { type: 'Point', coordinates: [point.lon, point.lat] }
   const [parcelle] = await findParcellesIn(fetch, geom, options)
+  return parcelle ?? null
+}
+
+/**
+ * La parcelle qui contient ces coordonnées. Pas de repli sur une voisine : des coordonnées
+ * désignent un point précis, et l'utilisateur doit savoir qu'il n'est sur aucune parcelle.
+ */
+async function resolvePoint(fetch: Fetch, point: LonLat, options: LoadOptions): Promise<Parcelle> {
+  const parcelle = await parcelleAuPoint(fetch, point, options)
+  if (parcelle) return parcelle
+  throw new SearchError(
+    'Aucune parcelle ne contient ce point : voirie, cours d’eau ou hors du cadastre. Vérifiez les coordonnées, ou choisissez la parcelle sur la carte.',
+  )
+}
+
+/** La parcelle d'une adresse : celle qui contient son point, ou à défaut la plus proche. */
+export async function resolveAdresse(fetch: Fetch, point: LonLat, options: LoadOptions = {}): Promise<Parcelle> {
+  const parcelle = await parcelleAuPoint(fetch, point, options)
   if (parcelle) return parcelle
 
   // Le point d'une adresse tombe souvent sur la voirie, qui n'est pas cadastrée : on prend

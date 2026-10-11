@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Adresse } from '@/api/geocodage'
-import { resolvePoint, resolveSearch, suggestAdresses } from '@/api/recherche'
+import { resolveAdresse, resolveSearch, suggestAdresses } from '@/api/recherche'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { parcelleQuery } from './parcelle'
 
@@ -34,7 +34,7 @@ export function useResolveSearch() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (target: SearchTarget) =>
-      'adresse' in target ? resolvePoint(fetch, target.adresse.point) : resolveSearch(fetch, target.saisie),
+      'adresse' in target ? resolveAdresse(fetch, target.adresse.point) : resolveSearch(fetch, target.saisie),
     onSuccess: (parcelle) => queryClient.setQueryData(parcelleQuery(parcelle.idu).queryKey, parcelle),
   })
 }

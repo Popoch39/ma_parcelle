@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fakeFetch } from '@/test/fake-fetch'
-import { resolveSearch, SearchError, suggestAdresses } from './recherche'
+import { resolveAdresse, resolveSearch, SearchError, suggestAdresses } from './recherche'
 import bordeaux from './__fixtures__/cadastre/parcelle-bordeaux-33063-kj-33.json'
 import introuvable from './__fixtures__/cadastre/parcelle-introuvable.json'
 import lyon from './__fixtures__/cadastre/parcelle-lyon-69382-ab-62.json'
@@ -185,13 +185,30 @@ describe('resolveSearch', () => {
       expect(fetch.calls).toHaveLength(1)
     })
 
-    it('signale des coordonnées hors du cadastre, même aux abords du point', async () => {
+    it('signale des coordonnées qu’aucune parcelle ne contient, sans chercher de parcelle voisine', async () => {
+      const fetch = fakeFetch([
+        { match: /geom=.*Point/, body: pointVoirie },
+        { match: /geom=.*Polygon/, body: carreVoirie },
+      ])
+
+      // Le point de l'adresse du 12 rue Sainte-Catherine, sur la voirie, saisi en coordonnées.
+      const error = await resolveSearch(fetch, '44.841405, -0.574364').catch((e: unknown) => e)
+
+      expect(error).toBeInstanceOf(SearchError)
+      expect(error).toMatchObject({
+        message:
+          'Aucune parcelle ne contient ce point : voirie, cours d’eau ou hors du cadastre. Vérifiez les coordonnées, ou choisissez la parcelle sur la carte.',
+      })
+      expect(fetch.calls.map(geomOf)).toEqual([{ type: 'Point', coordinates: [-0.574364, 44.841405] }])
+    })
+
+    it('signale une adresse dont aucune parcelle n’entoure le point, même aux abords', async () => {
       const fetch = fakeFetch([
         { match: /geom=.*Point/, body: pointOcean },
         { match: /geom=.*Polygon/, body: carreOcean },
       ])
 
-      const error = await resolveSearch(fetch, '45.0, -30.0').catch((e: unknown) => e)
+      const error = await resolveAdresse(fetch, { lon: -30, lat: 45 }).catch((e: unknown) => e)
 
       expect(error).toBeInstanceOf(SearchError)
       expect(error).toMatchObject({ message: 'Aucune parcelle cadastrée à cet endroit.' })
