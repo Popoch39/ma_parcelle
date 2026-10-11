@@ -1,44 +1,37 @@
-import { LIBELLES_EXCLUSION, LIBELLES_TYPE, type Vente } from '@/lib/ventes'
+import type { Vente } from '@/lib/ventes'
 import { cn } from '@/lib/utils'
+import { VenteDetails } from './VenteDetails'
 
-const euros = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
-const entier = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
-const jour = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' })
-
-/** « 2023-03-23 » → « 23 mars 2023 », sans passer par UTC qui décalerait le jour à l'ouest de Greenwich. */
-function dateOf(date: string): string {
-  const [annee, mois, quantieme] = date.split('-').map(Number)
-  return jour.format(new Date(annee, mois - 1, quantieme))
+interface VenteRowProps {
+  vente: Vente
+  /** Vente mise en évidence sur la carte, au survol de son point ou de sa ligne. */
+  survolee: boolean
+  /** Appelé à l'entrée (true) et à la sortie (false) du pointeur ou du focus clavier. */
+  onSurvol: (survolee: boolean) => void
+  /** Montre la vente sur la carte. */
+  onOuvrir: () => void
 }
 
-function surfacesOf({ surfaceBatie, surfaceTerrain }: Vente): string | null {
-  const surfaces = [
-    surfaceBatie && `${entier.format(surfaceBatie)} m² bâtis`,
-    surfaceTerrain && `${entier.format(surfaceTerrain)} m² de terrain`,
-  ].filter(Boolean)
-  return surfaces.length > 0 ? surfaces.join(' · ') : null
-}
-
-/** Une vente du voisinage : date, bien, prix, surfaces, prix au m², et pourquoi elle est exclue de la médiane. */
-export function VenteRow({ vente }: { vente: Vente }) {
-  const surfaces = surfacesOf(vente)
+/** Une vente du voisinage, qui se montre sur la carte au survol, au focus et au clic. */
+export function VenteRow({ vente, survolee, onSurvol, onOuvrir }: VenteRowProps) {
   return (
-    <li className={cn('flex flex-col border-b border-border/60 py-1.5 last:border-b-0', vente.exclusion && 'text-muted-foreground')}>
-      <div className="flex items-baseline justify-between gap-3">
-        <span>
-          <span className="tabular-nums">{dateOf(vente.date)}</span> · {LIBELLES_TYPE[vente.type]}
-        </span>
-        <span className="shrink-0 font-medium tabular-nums">
-          {vente.prix === null ? 'Prix non publié' : euros.format(vente.prix)}
-        </span>
-      </div>
-      <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
-        <span className="tabular-nums">{surfaces ?? 'Surfaces non publiées'}</span>
-        {vente.prixM2 !== null && <span className="shrink-0 tabular-nums">{entier.format(vente.prixM2)} €/m²</span>}
-      </div>
-      {vente.exclusion && (
-        <span className="text-xs italic">Exclue de la médiane : {LIBELLES_EXCLUSION[vente.exclusion]}</span>
-      )}
+    <li className="border-b border-border/60 last:border-b-0">
+      <button
+        type="button"
+        onMouseEnter={() => onSurvol(true)}
+        onMouseLeave={() => onSurvol(false)}
+        onFocus={() => onSurvol(true)}
+        onBlur={() => onSurvol(false)}
+        onClick={onOuvrir}
+        className={cn(
+          '-mx-1.5 flex w-[calc(100%+0.75rem)] flex-col rounded-md px-1.5 py-1.5 text-left outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50',
+          survolee && 'bg-accent',
+          vente.exclusion && 'text-muted-foreground',
+        )}
+      >
+        <VenteDetails vente={vente} />
+        <span className="sr-only">, voir sur la carte</span>
+      </button>
     </li>
   )
 }

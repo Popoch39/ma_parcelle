@@ -6,8 +6,18 @@ import { VenteRow } from './VenteRow'
 // Un quartier dense compte plus d'un millier de ventes en cinq ans : on les déroule par paquets.
 const PAR_PAQUET = 20
 
+interface VenteListProps {
+  ventes: Vente[]
+  /** Vente mise en évidence (son `id`), depuis la liste ou depuis la carte. */
+  survolee: string | null
+  /** Vente sous le pointeur ou le focus (son `id`), ou null quand ils la quittent. */
+  onSurvol: (id: string | null) => void
+  /** Montre une vente sur la carte. */
+  onOuvrir: (vente: Vente) => void
+}
+
 /** Toutes les ventes du voisinage, de la plus récente à la plus ancienne, exclues comprises. */
-export function VenteList({ ventes }: { ventes: Vente[] }) {
+export function VenteList({ ventes, survolee, onSurvol, onOuvrir }: VenteListProps) {
   const [affichees, setAffichees] = useState(PAR_PAQUET)
   const restantes = ventes.length - affichees
   return (
@@ -20,7 +30,13 @@ export function VenteList({ ventes }: { ventes: Vente[] }) {
       ) : (
         <ul className="flex flex-col">
           {ventes.slice(0, affichees).map((vente) => (
-            <VenteRow key={vente.id} vente={vente} />
+            <VenteRow
+              key={vente.id}
+              vente={vente}
+              survolee={vente.id === survolee}
+              onSurvol={(survol) => onSurvol(survol ? vente.id : null)}
+              onOuvrir={() => onOuvrir(vente)}
+            />
           ))}
         </ul>
       )}

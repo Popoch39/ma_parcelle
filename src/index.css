@@ -120,6 +120,42 @@
     color-scheme: dark;
 }
 
+/*
+ * Bulles MapLibre aux couleurs du thème : sa feuille de style les veut blanches, pointe comprise
+ * (une bordure par côté d'ancrage). Préfixées par `.maplibregl-map` pour l'emporter quel que
+ * soit l'ordre de chargement des deux feuilles.
+ */
+.maplibregl-map .maplibregl-popup-content {
+    background: var(--popover);
+    color: var(--popover-foreground);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+    padding: 0.625rem 1.75rem 0.625rem 0.75rem;
+}
+.maplibregl-map [class*='maplibregl-popup-anchor-top'] .maplibregl-popup-tip {
+    border-bottom-color: var(--popover);
+}
+.maplibregl-map [class*='maplibregl-popup-anchor-bottom'] .maplibregl-popup-tip {
+    border-top-color: var(--popover);
+}
+.maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+    border-right-color: var(--popover);
+}
+.maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+    border-left-color: var(--popover);
+}
+.maplibregl-map .maplibregl-popup-close-button {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 1.125rem;
+    color: var(--muted-foreground);
+    border-radius: 0 var(--radius) 0 0;
+}
+.maplibregl-map .maplibregl-popup-close-button:hover {
+    background-color: var(--accent);
+    color: var(--foreground);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

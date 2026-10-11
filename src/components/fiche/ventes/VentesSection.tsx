@@ -4,7 +4,10 @@ import { SectionError } from '@/components/common/SectionError'
 import { SectionSkeleton } from '@/components/common/SectionSkeleton'
 import { SourceLink } from '@/components/common/SourceLink'
 import type { BlocProps } from '@/components/fiche/blocs'
+import type { Vente } from '@/lib/ventes'
 import { useVentes } from '@/queries/ventes'
+import { useMapStore } from '@/stores/map-store'
+import { useUiStore } from '@/stores/ui-store'
 import { PrixMedianStat } from './PrixMedianStat'
 import { VenteList } from './VenteList'
 
@@ -16,9 +19,26 @@ const SOURCES: Record<SourceVentesId, { href: string; label: string }> = {
   },
 }
 
-/** Bloc Ventes : charge les ventes du voisinage, et affiche leur prix médian au m² et leur liste. */
+/**
+ * Bloc Ventes : charge les ventes du voisinage, affiche leur prix médian au m² et leur liste, et
+ * relie chaque ligne à son point sur la carte.
+ */
 export function VentesSection({ idu }: BlocProps) {
   const ventes = useVentes(idu)
+  const venteSurvolee = useMapStore((state) => state.venteSurvolee)
+  const survolerVente = useMapStore((state) => state.survolerVente)
+  const ouvrirVente = useMapStore((state) => state.ouvrirVente)
+  const setCalqueActif = useMapStore((state) => state.setCalqueActif)
+  const montrerPoint = useMapStore((state) => state.montrerPoint)
+  const sheetCran = useUiStore((state) => state.sheetCran)
+  const setSheetCran = useUiStore((state) => state.setSheetCran)
+  const montrerVente = (vente: Vente) => {
+    setCalqueActif('ventes', true)
+    ouvrirVente(vente.id)
+    // Sur mobile, la fiche en plein écran cache toute la carte.
+    if (sheetCran === 'plein-ecran') setSheetCran('mi-ecran')
+    montrerPoint(vente.position)
+  }
   const source = SOURCES[ventes.data?.source ?? 'cerema']
   return (
     <Section
@@ -44,7 +64,13 @@ export function VentesSection({ idu }: BlocProps) {
               {ventes.data.depuis} : un repère du voisinage, pas une estimation de la parcelle.
             </p>
           </div>
-          <VenteList key={idu} ventes={ventes.data.ventes} />
+          <VenteList
+            key={idu}
+            ventes={ventes.data.ventes}
+            survolee={venteSurvolee}
+            onSurvol={survolerVente}
+            onOuvrir={montrerVente}
+          />
         </div>
       )}
     </Section>
