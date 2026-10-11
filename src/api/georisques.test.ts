@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { assert, describe, expect, it } from 'vitest'
 import { fakeFetch, type FakeRoute } from '@/test/fake-fetch'
 import { loadParcelle } from './cadastre'
 import { loadRisques } from './georisques'
@@ -573,14 +573,23 @@ describe('loadRisques', () => {
     })
   })
 
-  it('compte les catastrophes naturelles reconnues dans la commune et cite les plus récentes', async () => {
+  it('compte les catastrophes naturelles reconnues dans la commune et en donne tout l’historique, des plus récentes aux plus anciennes', async () => {
     const fetch = fakeFetch([{ match: 'gaspar/catnat?code_insee=75056', body: catnatParis }])
 
     const { risques } = await loadRisques(fetch, await parcelle('75107000BQ0003', parcelleParis))
 
     // Une seule page : le lien `next` de Géorisques pointe vers un hôte interne, injoignable.
     expect(fetch.calls).toContain('https://www.georisques.gouv.fr/api/v1/gaspar/catnat?code_insee=75056&page_size=1000')
-    expect(risques.find(({ id }) => id === 'catnat')).toEqual({
+    const catnat = risques.find(({ id }) => id === 'catnat')
+    assert(catnat?.disponible)
+    expect(catnat.elements).toHaveLength(20)
+    // Les plus anciennes : le même arrêté de 1983 reconnaît trois risques d'un même orage.
+    expect(catnat.elements.slice(-3).map(({ libelle, precision }) => `${libelle} ${precision}`)).toEqual([
+      'Inondations et/ou Coulées de Boue du 05/06/1983 au 06/06/1983',
+      'Tempête du 05/06/1983 au 06/06/1983',
+      'Grêle du 05/06/1983 au 06/06/1983',
+    ])
+    expect({ ...catnat, elements: catnat.elements.slice(0, 5) }).toEqual({
       id: 'catnat',
       libelle: 'Catastrophes naturelles',
       portee: 'commune',

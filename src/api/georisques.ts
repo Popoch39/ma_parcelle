@@ -17,7 +17,7 @@ const RAYON = 500
 const RAYON_INSTALLATIONS = 1000
 /** En deçà, un site ou une cavité est tout proche de la parcelle, en mètres. */
 const TOUT_PROCHE = 100
-/** Éléments cités par risque, les plus proches ou les plus récents d'abord ; le total est dans la valeur. */
+/** Éléments cités par risque du voisinage, les plus proches d'abord ; le total est dans la valeur. */
 const CITES = 5
 
 /** Où vaut un risque : à l'emplacement de la parcelle (et autour), ou pour toute sa commune. */
@@ -667,9 +667,8 @@ function tri(territoires: TriGeorisques[]): Lecture {
 
 function catnat({ results, data }: Enveloppe<CatnatGeorisques>): Lecture {
   if (results === 0) return { niveau: 'information', valeur: 'Aucun événement reconnu', detail: null, elements: [] }
-  const recents = data
-    .toSorted((a, b) => dateIso(b.date_debut_evt).localeCompare(dateIso(a.date_debut_evt)))
-    .slice(0, CITES)
+  // Tout l'historique, des plus récents aux plus anciens : c'est la mémoire de la commune.
+  const recents = data.toSorted((a, b) => dateIso(b.date_debut_evt).localeCompare(dateIso(a.date_debut_evt)))
   return {
     niveau: 'information',
     valeur: `${results} ${results === 1 ? 'événement reconnu' : 'événements reconnus'}`,
