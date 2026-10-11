@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Fiche } from '@/components/fiche/Fiche'
+import { FicheDifferee } from '@/components/fiche/FicheDifferee'
 import { useParcelle } from '@/queries/parcelle'
 import { useSelectionStore } from '@/stores/selection-store'
 import { urlDeLaFiche } from '@/stores/selection-url'
@@ -46,7 +46,7 @@ function DocumentImprime({ idu, impression }: { idu: string; impression: Impress
         <p className="text-xs break-all text-muted-foreground">Fiche en ligne : {url}</p>
       </header>
       <CarteFigure carte={impression.carte} />
-      <Fiche idu={idu} />
+      <FicheDifferee idu={idu} />
     </article>
   )
 }

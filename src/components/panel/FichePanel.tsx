@@ -1,4 +1,4 @@
-import { Fiche } from '@/components/fiche/Fiche'
+import { FicheDifferee } from '@/components/fiche/FicheDifferee'
 import { FicheHeader } from '@/components/fiche/FicheHeader'
 import { useSelectionStore } from '@/stores/selection-store'
 import { useUiStore } from '@/stores/ui-store'
@@ -17,7 +17,7 @@ export function FichePanel() {
   if (desktop) {
     return (
       <PanelShell header={header}>
-        <Fiche idu={idu} />
+        <FicheDifferee idu={idu} />
       </PanelShell>
     )
   }
@@ -25,7 +25,7 @@ export function FichePanel() {
   // partagée s'ouvre à mi-écran pour être lue, là où le cadrage de la carte lui laisse la place.
   return (
     <BottomSheet header={header} cranInitial={reframe ? 'mi-ecran' : 'apercu'}>
-      <Fiche idu={idu} />
+      <FicheDifferee idu={idu} />
     </BottomSheet>
   )
 }
