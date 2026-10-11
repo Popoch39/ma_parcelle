@@ -11,6 +11,11 @@ export interface MapLayer {
   sources: Record<string, SourceSpecification>
   /** Couches empilées dans cet ordre, au-dessus de celles déjà posées. */
   layers: LayerSpecification[]
+  /**
+   * Pose les couches sous toutes les autres plutôt qu'au-dessus : pour un fond posé comme un
+   * calque (la photo aérienne), qui peut être monté après les surcouches.
+   */
+  beneath?: boolean
 }
 
 /**
@@ -18,7 +23,7 @@ export interface MapLayer {
  * chaque changement de fond. Un changement de `sources` ou `layers` (ex. un autre filtre)
  * retire puis repose le calque.
  */
-export function useMapLayer({ sources, layers }: MapLayer): void {
+export function useMapLayer({ sources, layers, beneath = false }: MapLayer): void {
   const map = useMapStore((state) => state.map)
 
   useEffect(() => {
@@ -27,8 +32,9 @@ export function useMapLayer({ sources, layers }: MapLayer): void {
       for (const [id, source] of Object.entries(sources)) {
         if (!map.getSource(id)) map.addSource(id, source)
       }
+      const beforeId = beneath ? map.getLayersOrder()[0] : undefined
       for (const layer of layers) {
-        if (!map.getLayer(layer.id)) map.addLayer(layer)
+        if (!map.getLayer(layer.id)) map.addLayer(layer, beforeId)
       }
     }
     if (isStyleReady(map)) apply()
@@ -49,7 +55,7 @@ export function useMapLayer({ sources, layers }: MapLayer): void {
         if (!otherSources.has(id) && map.getSource(id)) map.removeSource(id)
       }
     }
-  }, [map, sources, layers])
+  }, [map, sources, layers, beneath])
 }
 
 // L'API de style lève tant qu'un fond se charge et après `map.remove()` ; `getStyle()` est le
