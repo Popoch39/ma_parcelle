@@ -56,10 +56,35 @@ export interface Prescription {
   texte: string | null
 }
 
+/** Servitude d'utilité publique qui touche la parcelle. */
+export interface Servitude {
+  /** Identifiant de l'emprise au Géoportail de l'urbanisme, unique dans la liste. */
+  id: string
+  /** Code officiel, ex. « AC1 ». */
+  code: string
+  /** Catégorie en clair, ex. « Abords de monument historique ». */
+  categorie: string
+  /** Ce que la servitude protège ou dessert, ex. « Hôtel des Invalides » ; null si non renseigné. */
+  nom: string | null
+  geometrie: MultiPolygon
+}
+
+/**
+ * Alerte « périmètre ABF » : la parcelle est aux abords d'au moins un monument historique, où
+ * les travaux visibles sont soumis à l'avis de l'architecte des bâtiments de France.
+ */
+export interface PerimetreAbf {
+  /** Monuments dont la parcelle est aux abords, sans doublon ; vide si leurs noms ne sont pas publiés. */
+  monuments: string[]
+}
+
 /** Modèle du bloc Urbanisme. */
 export interface Urbanisme {
   reglementation: Reglementation
   prescriptions: Prescription[]
+  servitudes: Servitude[]
+  /** null hors des abords de tout monument historique. */
+  perimetreAbf: PerimetreAbf | null
 }
 
 interface FeatureCollection<Properties> {
@@ -86,6 +111,13 @@ interface SecteurCcProperties extends ZonageProperties {
 interface PrescriptionProperties {
   libelle: string
   txt: string | null
+}
+
+interface ServitudeProperties {
+  idass: string
+  suptype: string
+  typeass: string | null
+  nomsuplitt: string | null
 }
 
 interface MunicipalityProperties {
@@ -130,6 +162,34 @@ const FAMILLES_SECTEUR: Record<string, string> = {
   '03': 'secteur non constructible',
 }
 
+// Nomenclature nationale des servitudes d'utilité publique, pour les catégories courantes.
+const CATEGORIES_SERVITUDE: Record<string, string> = {
+  AC1: 'Abords de monument historique',
+  AC2: 'Site inscrit ou classé',
+  AC3: 'Réserve naturelle',
+  AC4: 'Site patrimonial remarquable',
+  A4: 'Passage le long d’un cours d’eau',
+  A5: 'Canalisation d’eau ou d’assainissement',
+  AS1: 'Protection d’un captage d’eau potable',
+  EL3: 'Halage et marchepied',
+  EL7: 'Alignement des voies publiques',
+  I1: 'Canalisation de transport de matières dangereuses',
+  I3: 'Canalisation de gaz',
+  I4: 'Ligne électrique',
+  INT1: 'Voisinage d’un cimetière',
+  JS1: 'Protection d’une installation sportive',
+  PM1: 'Plan de prévention des risques naturels',
+  PM2: 'Installation classée pour l’environnement',
+  PM3: 'Plan de prévention des risques technologiques',
+  PT1: 'Transmissions radioélectriques (perturbations)',
+  PT2: 'Transmissions radioélectriques (obstacles)',
+  PT3: 'Réseau de télécommunications',
+  T1: 'Voie ferrée',
+  T4: 'Balisage aéronautique',
+  T5: 'Dégagement aéronautique',
+  T7: 'Servitude aéronautique',
+}
+
 /**
  * Chargeur du bloc Urbanisme : ce que le Géoportail de l'urbanisme dit de la parcelle,
  * interrogé avec la géométrie de la parcelle.
@@ -145,7 +205,7 @@ export async function loadUrbanisme(
       signal,
       timeoutMs,
     })
-  const [zonesPlu, secteurs, documents, communes, prescriptions] = await Promise.all([
+  const [zonesPlu, secteurs, documents, communes, prescriptions, servitudes] = await Promise.all([
     get<ZoneUrbaProperties>('zone-urba'),
     get<SecteurCcProperties>('secteur-cc'),
     get<DocumentProperties>('document'),
@@ -153,6 +213,7 @@ export async function loadUrbanisme(
     // Chaque prescription arrive avec toute sa géométrie, parfois une ville entière : plus
     // d'un mégaoctet à Paris, plusieurs secondes même sur une bonne connexion.
     get<PrescriptionProperties>('prescription-surf', 30_000),
+    get<ServitudeProperties>('assiette-sup-s'),
   ])
   const partDe = mesureCouverture(parcelle.geometrie)
   const zones = [
@@ -169,7 +230,50 @@ export async function loadUrbanisme(
   return {
     reglementation: reglementationDe(parcelle, zones, documents, communes),
     prescriptions: prescriptionsDe(prescriptions, partDe),
+    ...servitudesDe(servitudes, partDe),
   }
+}
+
+function servitudesDe(
+  servitudes: FeatureCollection<ServitudeProperties>,
+  partDe: (geometrie: MultiPolygon) => number,
+): Pick<Urbanisme, 'servitudes' | 'perimetreAbf'> {
+  const touchees = servitudes.features.filter(({ geometry }) => partDe(geometry) >= PART_SIGNIFICATIVE)
+  const abords = touchees.filter(({ properties }) => estAbordsMonument(properties))
+  const monuments = abords.flatMap(({ properties }) => (properties.nomsuplitt ? [reEncode(properties.nomsuplitt)] : []))
+  return {
+    servitudes: touchees.map(({ geometry, properties }) => toServitude(geometry, properties)),
+    perimetreAbf: abords.length > 0 ? { monuments: [...new Set(monuments)] } : null,
+  }
+}
+
+// Un monument historique (AC1) a deux emprises : la sienne et celle de ses abords.
+function estAbordsMonument({ suptype, typeass }: ServitudeProperties): boolean {
+  return suptype.toUpperCase() === 'AC1' && /abords/i.test(typeass ?? '')
+}
+
+function toServitude(geometrie: MultiPolygon, properties: ServitudeProperties): Servitude {
+  const code = properties.suptype.toUpperCase()
+  const monument = code === 'AC1' && !estAbordsMonument(properties)
+  return {
+    id: properties.idass,
+    code,
+    categorie: monument ? 'Monument historique' : (CATEGORIES_SERVITUDE[code] ?? 'Servitude d’utilité publique'),
+    nom: properties.nomsuplitt ? reEncode(properties.nomsuplitt) : null,
+    geometrie,
+  }
+}
+
+/**
+ * Répare un texte UTF-8 lu comme du Latin-1 avant d'être servi (« HÃ´tel » pour « Hôtel »),
+ * comme les noms des monuments historiques. Un texte sain est rendu tel quel.
+ */
+function reEncode(texte: string): string {
+  const octets = Array.from(texte, (c) => c.charCodeAt(0))
+  if (!/[ÂÃ]/.test(texte) || octets.some((octet) => octet > 0xff)) return texte
+  const repare = new TextDecoder().decode(Uint8Array.from(octets))
+  // Pas une suite UTF-8 valide : le texte contenait vraiment ces caractères.
+  return repare.includes('�') ? texte : repare
 }
 
 function prescriptionsDe(

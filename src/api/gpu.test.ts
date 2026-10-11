@@ -10,6 +10,8 @@ import parcelleBordeaux from './__fixtures__/cadastre/parcelle-bordeaux-33063-kj
 import parcelleParis from './__fixtures__/cadastre/parcelle-paris-75107-bq-3.json'
 import parcellePleaux from './__fixtures__/cadastre/parcelle-pleaux-15153-0f-262.json'
 import aucunObjet from './__fixtures__/gpu/aucun-objet.json'
+import servitudesBordeaux from './__fixtures__/gpu/assiette-sup-s-bordeaux-33063-kj-33.json'
+import servitudesParis from './__fixtures__/gpu/assiette-sup-s-paris-75107-bq-3.json'
 import documentPleaux from './__fixtures__/gpu/document-pleaux-15153-0f-262.json'
 import municipalityAiguesJuntes from './__fixtures__/gpu/municipality-aigues-juntes-09001-zc-148.json'
 import municipalityAmberieu from './__fixtures__/gpu/municipality-amberieu-01004.json'
@@ -27,11 +29,18 @@ import zonesAmberieuLisere from './__fixtures__/gpu/zone-urba-amberieu-01004-ab-
 import zonesAmberieuCheval from './__fixtures__/gpu/zone-urba-amberieu-01004-ab-250.json'
 import zonesParis from './__fixtures__/gpu/zone-urba-paris-75107-bq-3.json'
 
-type Endpoint = 'zone-urba' | 'secteur-cc' | 'document' | 'municipality' | 'prescription-surf'
+type Endpoint = 'zone-urba' | 'secteur-cc' | 'document' | 'municipality' | 'prescription-surf' | 'assiette-sup-s'
 
 /** Faux fetch de l'API Carto GPU : un endpoint non fourni répond comme sans objet. */
 function gpu(responses: Partial<Record<Endpoint, unknown>>) {
-  const endpoints: Endpoint[] = ['zone-urba', 'secteur-cc', 'document', 'municipality', 'prescription-surf']
+  const endpoints: Endpoint[] = [
+    'zone-urba',
+    'secteur-cc',
+    'document',
+    'municipality',
+    'prescription-surf',
+    'assiette-sup-s',
+  ]
   return fakeFetch(
     endpoints.map((endpoint) => ({ match: `/api/gpu/${endpoint}?`, body: responses[endpoint] ?? aucunObjet })),
   )
@@ -47,6 +56,7 @@ const paris = {
   document: documentParis,
   municipality: municipalityParis,
   'prescription-surf': prescriptionsParis,
+  'assiette-sup-s': servitudesParis,
 }
 
 describe('loadUrbanisme', () => {
@@ -95,7 +105,12 @@ describe('loadUrbanisme', () => {
 
     const urbanisme = await loadUrbanisme(gpu({ municipality: municipalityAiguesJuntes }), parcelle)
 
-    expect(urbanisme).toEqual({ reglementation: { regime: 'rnu' }, prescriptions: [] })
+    expect(urbanisme).toEqual({
+      reglementation: { regime: 'rnu' },
+      prescriptions: [],
+      servitudes: [],
+      perimetreAbf: null,
+    })
   })
 
   it('décrit le secteur d’une carte communale, qui n’a pas de règlement écrit', async () => {
@@ -128,17 +143,31 @@ describe('loadUrbanisme', () => {
     })
   })
 
-  it('signale un secteur sans zone publiée, comme un secteur sauvegardé, sans taire ses prescriptions', async () => {
+  it('signale un secteur sans zone publiée, comme un secteur sauvegardé, sans taire ses prescriptions ni ses servitudes', async () => {
     const parcelle = await parcelleDe(parcelleBordeaux)
 
     const urbanisme = await loadUrbanisme(
-      gpu({ municipality: municipalityBordeaux, 'prescription-surf': prescriptionsBordeaux }),
+      gpu({
+        municipality: municipalityBordeaux,
+        'prescription-surf': prescriptionsBordeaux,
+        'assiette-sup-s': servitudesBordeaux,
+      }),
       parcelle,
     )
 
     expect(urbanisme).toEqual({
       reglementation: { regime: 'sans-zone' },
       prescriptions: [{ libelle: 'Indice de stationnement', texte: 'VRE' }],
+      servitudes: [
+        {
+          id: 'AC4-172014607-1911140376-1-1',
+          code: 'AC4',
+          categorie: 'Site patrimonial remarquable',
+          nom: 'Site Patrimonial Remarquable de Bordeaux',
+          geometrie: servitudesBordeaux.features[0].geometry,
+        },
+      ],
+      perimetreAbf: null,
     })
   })
 
@@ -199,7 +228,75 @@ describe('loadUrbanisme', () => {
     expect(urbanisme.prescriptions).toEqual([{ libelle: 'hauteur maximale 9m', texte: null }])
   })
 
-  it('interroge zone, secteur, document, commune et prescriptions par la géométrie de la parcelle, jamais les actes de servitude', async () => {
+  it('liste les servitudes qui touchent la parcelle, avec leur catégorie en clair, leur code et ce qu’elles protègent', async () => {
+    const parcelle = await parcelleDe(parcelleParis)
+
+    const urbanisme = await loadUrbanisme(gpu(paris), parcelle)
+
+    // Le monument lui-même et les voies du 7e ne font que toucher le bord de la parcelle.
+    expect(urbanisme.servitudes.map(({ code, categorie, nom }) => ({ code, categorie, nom }))).toEqual([
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel de Jarnac (ancien)' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel Brongniart' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Église Saint-François-Xavier' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel de Bourbon Condé (ancien)' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel de Richepanse (ancien)' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Ecole Militaire' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Ministère de la Marine Marchande' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Immeuble' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel de Beaumont' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel des Invalides' },
+      { code: 'AC1', categorie: 'Abords de monument historique', nom: 'Hôtel Montesquiou-Fezensac' },
+      { code: 'AC2', categorie: 'Site inscrit ou classé', nom: 'Ensemble urbain à Paris' },
+    ])
+  })
+
+  it('signale le périmètre ABF quand la parcelle est aux abords de monuments historiques, en les nommant', async () => {
+    const parcelle = await parcelleDe(parcelleParis)
+
+    const urbanisme = await loadUrbanisme(gpu(paris), parcelle)
+
+    expect(urbanisme.perimetreAbf).toEqual({
+      monuments: [
+        'Hôtel de Jarnac (ancien)',
+        'Hôtel Brongniart',
+        'Église Saint-François-Xavier',
+        'Hôtel de Bourbon Condé (ancien)',
+        'Hôtel de Richepanse (ancien)',
+        'Ecole Militaire',
+        'Ministère de la Marine Marchande',
+        'Immeuble',
+        'Hôtel de Beaumont',
+        'Hôtel des Invalides',
+        'Hôtel Montesquiou-Fezensac',
+      ],
+    })
+  })
+
+  it('ne signale pas de périmètre ABF hors des abords d’un monument historique, même dans un site patrimonial remarquable', async () => {
+    const parcelle = await parcelleDe(parcelleBordeaux)
+
+    const urbanisme = await loadUrbanisme(
+      gpu({ municipality: municipalityBordeaux, 'assiette-sup-s': servitudesBordeaux }),
+      parcelle,
+    )
+
+    expect(urbanisme.perimetreAbf).toBeNull()
+  })
+
+  it('n’a ni servitude ni périmètre ABF pour une parcelle qu’aucune servitude ne touche', async () => {
+    const parcelle = await parcelleDe(parcelleAiguesJuntes)
+
+    // Réponse réelle de l'API pour cette parcelle : aucune emprise de servitude.
+    const urbanisme = await loadUrbanisme(
+      gpu({ municipality: municipalityAiguesJuntes, 'assiette-sup-s': aucunObjet }),
+      parcelle,
+    )
+
+    expect(urbanisme.servitudes).toEqual([])
+    expect(urbanisme.perimetreAbf).toBeNull()
+  })
+
+  it('interroge zone, secteur, document, commune, prescriptions et servitudes par la géométrie de la parcelle, jamais les actes de servitude', async () => {
     const parcelle = await parcelleDe(parcelleParis)
     const fetch = gpu(paris)
 
@@ -207,6 +304,7 @@ describe('loadUrbanisme', () => {
 
     const urls = fetch.calls.map((call) => new URL(call))
     expect(urls.map(({ pathname }) => pathname).sort()).toEqual([
+      '/api/gpu/assiette-sup-s',
       '/api/gpu/document',
       '/api/gpu/municipality',
       '/api/gpu/prescription-surf',
