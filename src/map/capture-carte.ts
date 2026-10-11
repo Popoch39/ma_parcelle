@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap } from 'maplibre-gl'
 import type { Emprise } from '@/lib/geo'
-import { cadrageCapture, zoomImpression } from '@/lib/impression'
+import { cadrageCapture, garderVueCourante, zoomImpression } from '@/lib/impression'
 import type { CarteImprimee } from '@/stores/ui-store'
 import { PCI_ZOOM_MIN } from './layers/pci-source'
 
@@ -14,13 +14,16 @@ export const FORMAT_CARTE = 3 / 2
 const MARGE = 32
 
 /**
- * Centre la carte sur la parcelle, au zoom de la vue courante tant qu'elle y tient entière et
- * surlignée. Renvoie de quoi revenir à la vue d'avant.
+ * Garde la vue courante si la parcelle y est surlignée et dans l'image imprimée ; sinon, centre
+ * la carte sur elle, au zoom de la vue courante tant qu'elle y tient entière et surlignée.
+ * Renvoie de quoi revenir à la vue d'avant.
  */
 export function cadrerPourImpression(map: MapLibreMap, emprise: Emprise): () => void {
   const avant = { center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch() }
   const { clientWidth, clientHeight } = map.getContainer()
   const cadre = cadrageCapture({ width: clientWidth, height: clientHeight }, FORMAT_CARTE)
+  const centreParcelle = map.project([(emprise[0] + emprise[2]) / 2, (emprise[1] + emprise[3]) / 2])
+  if (garderVueCourante({ zoom: avant.zoom, surlignage: PCI_ZOOM_MIN, centreParcelle, cadre })) return () => {}
   const camera = map.cameraForBounds(emprise, {
     padding: { top: cadre.y + MARGE, bottom: cadre.y + MARGE, left: cadre.x + MARGE, right: cadre.x + MARGE },
     bearing: avant.bearing,

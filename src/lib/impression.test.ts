@@ -1,7 +1,28 @@
 import { describe, expect, it } from 'vitest'
-import { cadrageCapture, zoomImpression } from './impression'
+import { cadrageCapture, garderVueCourante, zoomImpression } from './impression'
 
-describe('zoom de la carte imprimée', () => {
+describe('vue de la carte imprimée', () => {
+  // Image de 1350 × 900 au centre d'un écran de 1600 × 900 ; sélection surlignée à partir du zoom 15.
+  const cadre = { x: 125, y: 0, width: 1350, height: 900 }
+  const garder = (zoom: number, x: number, y: number) =>
+    garderVueCourante({ zoom, surlignage: 15, centreParcelle: { x, y }, cadre })
+
+  it('imprime la vue courante telle quelle quand la parcelle y est, surlignée, même loin du centre', () => {
+    expect(garder(17, 800, 450)).toBe(true)
+    expect(garder(15, 200, 850)).toBe(true)
+  })
+
+  it('recadre quand la parcelle est hors de l’image, même visible à l’écran', () => {
+    expect(garder(17, 2400, 450)).toBe(false)
+    expect(garder(17, 60, 450)).toBe(false)
+  })
+
+  it('recadre quand la vue est trop éloignée pour que la parcelle soit surlignée', () => {
+    expect(garder(14.9, 800, 450)).toBe(false)
+  })
+})
+
+describe('zoom de la carte imprimée quand il faut recadrer', () => {
   // Parcelle entière dans l'image jusqu'au zoom 18 ; sélection surlignée à partir du zoom 15.
   const zoom = (courant: number, parcelleEntiere = 18) => zoomImpression({ courant, parcelleEntiere, surlignage: 15 })
 

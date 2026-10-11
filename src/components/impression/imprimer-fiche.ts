@@ -13,8 +13,9 @@ const ATTENTE_MAX = 30_000
 
 /**
  * Prépare la fiche à l'impression puis ouvre l'impression du navigateur : carte passée en clair,
- * centrée sur la parcelle et capturée en image, blocs chargés, listes dépliées. La vue de la carte
- * revient aussitôt la capture faite ; le reste, à la fermeture de la fenêtre d'impression.
+ * recadrée sur la parcelle seulement si elle n'est pas visible, et capturée en image, blocs
+ * chargés, listes dépliées. La vue de la carte revient aussitôt la capture faite ; le reste, à la
+ * fermeture de la fenêtre d'impression.
  */
 export async function imprimerFiche(idu: string): Promise<void> {
   const { impression, setImpression } = useUiStore.getState()
