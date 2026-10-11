@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { BlocId } from '@/components/fiche/blocs'
 import type { Cran } from '@/lib/bottom-sheet'
+import { DESKTOP } from '@/lib/mise-en-page'
 import { colorSchemeOf, persistedTheme, type Theme } from './theme'
 
 export type ColorScheme = 'light' | 'dark'
@@ -9,6 +10,8 @@ export type ColorScheme = 'light' | 'dark'
 interface UiState {
   /** Thème du système, suivi en direct. */
   systemColorScheme: ColorScheme
+  /** Écran desktop (panneau latéral) plutôt que mobile (bottom sheet), suivi en direct : rotation, redimensionnement. */
+  desktop: boolean
   /** Thème choisi par l'utilisateur, mémorisé dans le navigateur. */
   theme: Theme
   setTheme: (theme: Theme) => void
@@ -41,11 +44,13 @@ export interface CarteImprimee {
 
 const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
 const schemeOf = (query: MediaQueryList): ColorScheme => (query.matches ? 'dark' : 'light')
+const desktopQuery = () => window.matchMedia(DESKTOP)
 
 export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
       systemColorScheme: schemeOf(darkQuery()),
+      desktop: desktopQuery().matches,
       theme: 'auto',
       setTheme: (theme) => set({ theme }),
       sheetCran: 'apercu',
@@ -62,8 +67,8 @@ export const useUiStore = create<UiState>()(
     }),
     {
       name: 'ma-parcelle:interface',
-      // Seul le thème se mémorise : le thème système se relit à chaque visite, et chaque fiche
-      // s'ouvre au cran par défaut.
+      // Seul le thème se mémorise : le thème système et l'écran se relisent à chaque visite, et
+      // chaque fiche s'ouvre au cran par défaut.
       partialize: ({ theme }) => ({ theme }),
       merge: (persisted, current) => ({ ...current, theme: persistedTheme(persisted) }),
     },
@@ -74,6 +79,14 @@ export const useUiStore = create<UiState>()(
 export function followSystemColorScheme(): () => void {
   const query = darkQuery()
   const onChange = () => useUiStore.setState({ systemColorScheme: schemeOf(query) })
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+
+/** Met le store à jour quand l'écran passe de mobile à desktop ou l'inverse. Renvoie la fonction qui arrête le suivi. */
+export function followDesktopLayout(): () => void {
+  const query = desktopQuery()
+  const onChange = () => useUiStore.setState({ desktop: query.matches })
   query.addEventListener('change', onChange)
   return () => query.removeEventListener('change', onChange)
 }

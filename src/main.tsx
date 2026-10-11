@@ -6,9 +6,10 @@ import App from './App.tsx'
 import { suivreImpressions } from './components/impression/imprimer-fiche'
 import { queryClient } from './queries/query-client'
 import { syncSelectionWithUrl } from './stores/selection-url'
-import { applyThemeToDocument, followSystemColorScheme } from './stores/ui-store'
+import { applyThemeToDocument, followDesktopLayout, followSystemColorScheme } from './stores/ui-store'
 
 followSystemColorScheme()
+followDesktopLayout()
 applyThemeToDocument()
 syncSelectionWithUrl()
 suivreImpressions()
