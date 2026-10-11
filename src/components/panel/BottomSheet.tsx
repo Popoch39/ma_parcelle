@@ -7,7 +7,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react'
-import { CRANS, cranAuRelachement, cranVoisin, type Cran } from '@/lib/bottom-sheet'
+import { CRANS, cranAuRelachement, cranVoisin, PART_MI_ECRAN, type Cran } from '@/lib/bottom-sheet'
 import { cn } from '@/lib/utils'
 import { useUiStore } from '@/stores/ui-store'
 
@@ -24,8 +24,8 @@ const LIBELLES: Record<Cran, string> = {
   'plein-ecran': 'Plein écran',
 }
 
-// Doit suivre le cadrage du store carte, qui réserve la moitié basse de l'écran sur mobile.
-const HAUTEURS_CSS = { 'mi-ecran': '50svh', 'plein-ecran': '100svh' }
+// Le cadrage du store carte réserve la même part de l'écran au mi-écran.
+const HAUTEURS_CSS = { 'mi-ecran': `${PART_MI_ECRAN * 100}svh`, 'plein-ecran': '100svh' }
 
 // En deçà, le doigt hésite ou tape (fermer la fiche) : ce n'est pas encore un glissement.
 const SEUIL_DE_GLISSEMENT = 6
@@ -80,7 +80,7 @@ export function BottomSheet({ header, children, cranInitial }: BottomSheetProps)
 
   const hauteursEnPx = (): Record<Cran, number> => ({
     apercu: hauteurApercu,
-    'mi-ecran': window.innerHeight / 2,
+    'mi-ecran': window.innerHeight * PART_MI_ECRAN,
     'plein-ecran': window.innerHeight,
   })
 

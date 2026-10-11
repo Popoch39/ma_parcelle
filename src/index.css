@@ -67,6 +67,14 @@
 }
 
 /*
+ * Largeur du panneau de la fiche sur desktop (`w-panneau`), et de la barre de recherche
+ * au-dessus : le cadrage de la carte la lit aussi, pour laisser la parcelle hors du panneau.
+ */
+@theme {
+    --container-panneau: 420px;
+}
+
+/*
  * « Outil pro épuré » : tout est neutre sauf `primary` (et `ring`), seul accent de l'app.
  * Dans la nomenclature shadcn, `accent` est le fond neutre de survol, pas une couleur d'accent.
  */

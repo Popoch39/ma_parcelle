@@ -1,6 +1,8 @@
 import type { Map as MapLibreMap, PaddingOptions } from 'maplibre-gl'
 import { create } from 'zustand'
+import { PART_MI_ECRAN } from '@/lib/bottom-sheet'
 import type { Emprise, LonLat } from '@/lib/geo'
+import { DESKTOP, largeurPanneau } from '@/lib/mise-en-page'
 import type { Basemap } from '@/map/basemaps'
 import { CALQUES, type Calque } from '@/map/calques'
 
@@ -73,12 +75,12 @@ export const useMapStore = create<MapState>()((set, get) => ({
   },
 }))
 
-// Doit suivre la place prise par PanelShell : 420 px à gauche sur desktop, la moitié basse
-// de l'écran sur mobile, sous la barre de recherche (56 px) qui couvre le haut de l'écran.
+// La place prise par la fiche : le panneau à gauche sur desktop (à 12 px du bord), le bottom
+// sheet à mi-écran sur mobile, sous la barre de recherche (56 px) qui couvre le haut de l'écran.
 function fichePadding(): Required<PaddingOptions> {
   const margin = 48
-  if (window.matchMedia('(min-width: 768px)').matches) {
-    return { top: margin, right: margin, bottom: margin, left: 420 + 12 + margin }
+  if (window.matchMedia(DESKTOP).matches) {
+    return { top: margin, right: margin, bottom: margin, left: largeurPanneau() + 12 + margin }
   }
-  return { top: 56 + margin, right: margin, bottom: window.innerHeight / 2 + margin, left: margin }
+  return { top: 56 + margin, right: margin, bottom: window.innerHeight * PART_MI_ECRAN + margin, left: margin }
 }

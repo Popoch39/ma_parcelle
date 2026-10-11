@@ -19,7 +19,7 @@ function App() {
         Sur desktop, au-dessus du panneau de la fiche et de sa largeur (voir PanelShell), pour que
         les suggestions le recouvrent. Sur mobile, toute la largeur, sous la fiche en plein écran.
       */}
-      <div className="fixed inset-x-3 top-3 z-[5] flex items-start gap-2 md:right-auto md:z-20 md:w-[420px]">
+      <div className="fixed inset-x-3 top-3 z-[5] flex items-start gap-2 md:right-auto md:z-20 md:w-panneau">
         <SearchBar />
         <LocateButton />
       </div>

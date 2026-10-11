@@ -3,6 +3,9 @@ export const CRANS = ['apercu', 'mi-ecran', 'plein-ecran'] as const
 
 export type Cran = (typeof CRANS)[number]
 
+/** Part de la hauteur de l'écran que couvre le bottom sheet à mi-écran, où le cadrage de la carte ne pose rien. */
+export const PART_MI_ECRAN = 0.5
+
 interface Relachement {
   /** Hauteur de chaque cran, en px. */
   hauteurs: Record<Cran, number>
