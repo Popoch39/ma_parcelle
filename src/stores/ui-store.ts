@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { Cran } from '@/lib/bottom-sheet'
 import { colorSchemeOf, persistedTheme, type Theme } from './theme'
 
 export type ColorScheme = 'light' | 'dark'
@@ -10,6 +11,9 @@ interface UiState {
   /** Thème choisi par l'utilisateur, mémorisé dans le navigateur. */
   theme: Theme
   setTheme: (theme: Theme) => void
+  /** Hauteur du bottom sheet de la fiche sur mobile. */
+  sheetCran: Cran
+  setSheetCran: (cran: Cran) => void
 }
 
 const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
@@ -21,10 +25,13 @@ export const useUiStore = create<UiState>()(
       systemColorScheme: schemeOf(darkQuery()),
       theme: 'auto',
       setTheme: (theme) => set({ theme }),
+      sheetCran: 'apercu',
+      setSheetCran: (sheetCran) => set({ sheetCran }),
     }),
     {
       name: 'ma-parcelle:interface',
-      // Seul le choix de l'utilisateur se mémorise ; le thème système se relit à chaque visite.
+      // Seul le thème se mémorise : le thème système se relit à chaque visite, et chaque fiche
+      // s'ouvre au cran par défaut.
       partialize: ({ theme }) => ({ theme }),
       merge: (persisted, current) => ({ ...current, theme: persistedTheme(persisted) }),
     },
