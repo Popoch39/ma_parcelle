@@ -1,22 +1,22 @@
 import { MapPin } from 'lucide-react'
-import type { Adresse } from '@/api/geocodage'
+import type { Address } from '@/api/geocoding'
 
 interface SuggestionItemProps {
   id: string
-  adresse: Adresse
+  address: Address
   active: boolean
   onChoose: () => void
   onHover: () => void
 }
 
-/** Une adresse suggérée. */
-export function SuggestionItem({ id, adresse, active, onChoose, onHover }: SuggestionItemProps) {
+/** A suggested address. */
+export function SuggestionItem({ id, address, active, onChoose, onHover }: SuggestionItemProps) {
   return (
     <li
       id={id}
       role="option"
       aria-selected={active}
-      // Le champ garde le focus : sans cela, il le perdrait (et fermerait la liste) avant le clic.
+      // The field keeps the focus: without this, it would lose it (and close the list) before the click.
       onMouseDown={(event) => event.preventDefault()}
       onClick={onChoose}
       onMouseMove={onHover}
@@ -24,8 +24,8 @@ export function SuggestionItem({ id, adresse, active, onChoose, onHover }: Sugge
     >
       <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0">
-        <span className="block truncate">{adresse.label}</span>
-        <span className="block truncate text-xs text-muted-foreground">{adresse.contexte}</span>
+        <span className="block truncate">{address.label}</span>
+        <span className="block truncate text-xs text-muted-foreground">{address.context}</span>
       </span>
     </li>
   )

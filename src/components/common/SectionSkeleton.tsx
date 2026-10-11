@@ -1,4 +1,4 @@
-/** État de chargement d'un bloc : quelques lignes qui pulsent à la place des faits. */
+/** Loading state of a block: a few pulsing rows in place of the facts. */
 export function SectionSkeleton({ rows = 4 }: { rows?: number }) {
   return (
     <div role="status" className="flex flex-col gap-2.5">

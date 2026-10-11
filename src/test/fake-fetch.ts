@@ -1,20 +1,20 @@
 import type { Fetch } from '@/api/fetch-json'
 
 /**
- * Réponse rejouée par le faux `fetch`. `body` est une fixture réelle, enregistrée telle quelle
- * (et tronquée au strict nécessaire) depuis la vraie API, rangée dans
- * `src/api/__fixtures__/<source>/<cas>.<json|csv>` : un objet est servi en JSON, une chaîne
- * (CSV importé en `?raw`, page d'erreur) telle quelle.
+ * Response replayed by the fake `fetch`. `body` is a real fixture, recorded as is
+ * (and trimmed to the bare minimum) from the real API, stored in
+ * `src/api/__fixtures__/<source>/<case>.<json|csv>`: an object is served as JSON, a string
+ * (CSV imported with `?raw`, error page) as is.
  */
 export interface FakeRoute {
-  /** Sous-chaîne ou motif de l'URL demandée. La première route qui correspond répond. */
+  /** Substring or pattern of the requested URL. The first matching route responds. */
   match: string | RegExp
   body: unknown
   status?: number
 }
 
 export interface FakeFetch extends Fetch {
-  /** URL demandées, dans l'ordre : on peut les vérifier quand elles font partie du contrat. */
+  /** Requested URLs, in order: they can be checked when they are part of the contract. */
   calls: string[]
 }
 
@@ -27,8 +27,8 @@ export function fakeFetch(routes: FakeRoute[]): FakeFetch {
     const route = routes.find(({ match }) =>
       typeof match === 'string' ? url.includes(match) : match.test(url),
     )
-    // Une URL inattendue doit faire échouer le test bruyamment, comme une panne réseau.
-    if (!route) throw new TypeError(`Aucune fixture pour ${url}`)
+    // An unexpected URL must make the test fail loudly, like a network outage.
+    if (!route) throw new TypeError(`No fixture for ${url}`)
     if (typeof route.body === 'string') return new Response(route.body, { status: route.status ?? 200 })
     return new Response(JSON.stringify(route.body), {
       status: route.status ?? 200,

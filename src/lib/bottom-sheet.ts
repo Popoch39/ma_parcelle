@@ -1,38 +1,38 @@
-/** Hauteurs auxquelles le bottom sheet de la fiche se pose, de la plus basse à la plus haute. */
-export const CRANS = ['apercu', 'mi-ecran', 'plein-ecran'] as const
+/** Heights the report bottom sheet settles at, from lowest to highest. */
+export const SNAPS = ['peek', 'half', 'full'] as const
 
-export type Cran = (typeof CRANS)[number]
+export type Snap = (typeof SNAPS)[number]
 
-/** Part de la hauteur de l'écran que couvre le bottom sheet à mi-écran, où le cadrage de la carte ne pose rien. */
-export const PART_MI_ECRAN = 0.5
+/** Share of the screen height covered by the bottom sheet at half screen, where the map framing places nothing. */
+export const HALF_SCREEN_RATIO = 0.5
 
-interface Relachement {
-  /** Hauteur de chaque cran, en px. */
-  hauteurs: Record<Cran, number>
-  /** Hauteur du panneau au moment où le doigt le lâche, en px. */
-  hauteur: number
-  /** Vitesse du doigt au relâchement, en px/ms, positive vers le haut. */
-  vitesse: number
+interface Release {
+  /** Height of each snap, in px. */
+  heights: Record<Snap, number>
+  /** Height of the panel at the moment the finger lets go, in px. */
+  height: number
+  /** Finger velocity at release, in px/ms, positive upwards. */
+  velocity: number
 }
 
-/** Cran immédiatement au-dessus ou au-dessous, le cran extrême restant en place. */
-export function cranVoisin(cran: Cran, sens: 'haut' | 'bas'): Cran {
-  const index = CRANS.indexOf(cran) + (sens === 'haut' ? 1 : -1)
-  return CRANS[Math.min(Math.max(index, 0), CRANS.length - 1)]
+/** Snap immediately above or below, the extreme snap staying in place. */
+export function adjacentSnap(snap: Snap, direction: 'up' | 'down'): Snap {
+  const index = SNAPS.indexOf(snap) + (direction === 'up' ? 1 : -1)
+  return SNAPS[Math.min(Math.max(index, 0), SNAPS.length - 1)]
 }
 
-// Au-delà, le geste est un lancer : on suit son intention plutôt que la position atteinte,
-// sinon un petit coup sec ne ferait que revenir au cran de départ.
-const VITESSE_DE_LANCER = 0.5
+// Beyond this, the gesture is a fling: we follow its intent rather than the position reached,
+// otherwise a quick flick would only return to the starting snap.
+const FLING_VELOCITY = 0.5
 
-/** Cran sur lequel le panneau se pose quand on le lâche après l'avoir fait glisser. */
-export function cranAuRelachement({ hauteurs, hauteur, vitesse }: Relachement): Cran {
-  if (vitesse >= VITESSE_DE_LANCER) {
-    return CRANS.find((cran) => hauteurs[cran] > hauteur) ?? CRANS[CRANS.length - 1]
+/** Snap the panel settles on when released after being dragged. */
+export function snapOnRelease({ heights, height, velocity }: Release): Snap {
+  if (velocity >= FLING_VELOCITY) {
+    return SNAPS.find((snap) => heights[snap] > height) ?? SNAPS[SNAPS.length - 1]
   }
-  if (vitesse <= -VITESSE_DE_LANCER) {
-    return CRANS.findLast((cran) => hauteurs[cran] < hauteur) ?? CRANS[0]
+  if (velocity <= -FLING_VELOCITY) {
+    return SNAPS.findLast((snap) => heights[snap] < height) ?? SNAPS[0]
   }
-  const distance = (cran: Cran) => Math.abs(hauteurs[cran] - hauteur)
-  return CRANS.reduce((proche, cran) => (distance(cran) < distance(proche) ? cran : proche))
+  const distance = (snap: Snap) => Math.abs(heights[snap] - height)
+  return SNAPS.reduce((closest, snap) => (distance(snap) < distance(closest) ? snap : closest))
 }

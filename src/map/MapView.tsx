@@ -1,14 +1,18 @@
-import 'maplibre-gl/dist/maplibre-gl.css'
-import { Map as MapLibreMap } from 'maplibre-gl'
+import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useRef } from 'react'
 import { useMapStore } from '@/stores/map-store'
 import { useColorScheme } from '@/stores/ui-store'
 import { basemapStyle } from './basemaps'
 
-// France métropolitaine entière à l'ouverture, quand l'URL ne désigne aucune parcelle.
+// MapLibre looks for its worker next to its own module: once bundled by Vite (chunk in
+// build, pre-bundle in dev), that file is no longer there. So Vite emits it itself.
+setWorkerUrl(workerUrl)
+
+// All of metropolitan France on open, when the URL designates no parcel.
 const FRANCE = { center: [2.5, 46.6] as [number, number], zoom: 5 }
 
-/** Crée la carte plein écran, la pose dans le store carte et lui applique le fond actif. */
+/** Creates the full-screen map, puts it in the map store and applies the active basemap. */
 export function MapView() {
   const container = useRef<HTMLDivElement>(null)
   const map = useMapStore((state) => state.map)
@@ -24,7 +28,7 @@ export function MapView() {
       ...FRANCE,
       attributionControl: { compact: true },
     })
-    // Les calques ne peuvent rien poser avant que le premier style soit chargé.
+    // Layers cannot add anything before the first style is loaded.
     instance.once('load', () => setMap(instance))
     return () => {
       setMap(null)

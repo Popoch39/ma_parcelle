@@ -1,8 +1,8 @@
 import { ApiError } from '@/api/fetch-json'
 
 /**
- * Message affichable pour l'échec d'un bloc. Les erreurs métier des chargeurs (ex.
- * `ParcelleError`) portent déjà un message en français ; les pannes d'API sont traduites ici.
+ * Displayable message for the failure of a block. Domain errors of the loaders (e.g.
+ * `ParcelError`) already carry a French message; API failures are translated here.
  */
 export function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {

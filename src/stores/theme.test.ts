@@ -5,37 +5,37 @@ describe('colorSchemeOf', () => {
   it.each([
     ['auto', 'light', 'light'],
     ['auto', 'dark', 'dark'],
-    ['clair', 'dark', 'light'],
-    ['sombre', 'light', 'dark'],
-  ] as const)('le thème %s, avec un système en %s, s’affiche en %s',(theme, system, expected) => {
+    ['light', 'dark', 'light'],
+    ['dark', 'light', 'dark'],
+  ] as const)('the %s theme, with a %s system, displays as %s',(theme, system, expected) => {
     expect(colorSchemeOf(theme, system)).toBe(expected)
   })
 
   it.each([
     ['auto', 'dark'],
-    ['sombre', 'light'],
-    ['sombre', 'dark'],
-  ] as const)('s’affiche en clair pendant une impression, quel que soit le thème (%s, système en %s)', (theme, system) => {
-    expect(colorSchemeOf(theme, system, { impression: true })).toBe('light')
+    ['dark', 'light'],
+    ['dark', 'dark'],
+  ] as const)('displays as light while printing, whatever the theme (%s, %s system)', (theme, system) => {
+    expect(colorSchemeOf(theme, system, { printing: true })).toBe('light')
   })
 })
 
 describe('persistedTheme', () => {
-  it('reprend le thème choisi lors d’une visite précédente', () => {
-    expect(persistedTheme({ theme: 'sombre' })).toBe('sombre')
+  it('restores the theme chosen during a previous visit', () => {
+    expect(persistedTheme({ theme: 'dark' })).toBe('dark')
   })
 
-  it('suit le système à la première visite', () => {
+  it('follows the system on the first visit', () => {
     expect(persistedTheme(undefined)).toBe('auto')
   })
 
   it.each([
-    ['un thème inconnu', { theme: 'bleu' }],
-    ['un thème d’un autre type', { theme: 2 }],
-    ['un état sans thème', {}],
-    ['une valeur qui n’est pas un objet', 'sombre'],
+    ['an unknown theme', { theme: 'bleu' }],
+    ['a theme of another type', { theme: 2 }],
+    ['a state without a theme', {}],
+    ['a value that is not an object', 'dark'],
     ['null', null],
-  ])('suit le système quand le stockage contient %s', (_, persisted) => {
+  ])('follows the system when the storage contains %s', (_, persisted) => {
     expect(persistedTheme(persisted)).toBe('auto')
   })
 })

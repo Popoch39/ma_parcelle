@@ -2,7 +2,7 @@ import { Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMapStore } from '@/stores/map-store'
 
-/** Boutons « Zoomer » et « Dézoomer », pour qui n'a ni molette ni pincement. */
+/** "Zoomer" and "Dézoomer" (zoom in / out) buttons, for those with neither scroll wheel nor pinch. */
 export function ZoomControl() {
   const map = useMapStore((state) => state.map)
   return (

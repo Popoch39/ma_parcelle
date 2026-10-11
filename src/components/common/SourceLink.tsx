@@ -2,13 +2,13 @@ import { ExternalLink } from 'lucide-react'
 
 interface SourceLinkProps {
   href: string
-  /** Nom de la source officielle, ex. « Plan cadastral (DGFiP, IGN) ». */
+  /** Name of the official source, e.g. « Plan cadastral (DGFiP, IGN) ». */
   label: string
-  /** Date ou millésime des données, quand la source le donne. */
+  /** Date or vintage of the data, when the source gives it. */
   date?: string
 }
 
-/** Lien vers la source officielle d'un bloc, ouvert dans un nouvel onglet. */
+/** Link to the official source of a block, opened in a new tab. */
 export function SourceLink({ href, label, date }: SourceLinkProps) {
   return (
     <a
@@ -19,7 +19,7 @@ export function SourceLink({ href, label, date }: SourceLinkProps) {
     >
       Source : {label}
       {date && <span className="tabular-nums"> · {date}</span>}
-      {/* Sur papier, le lien ne se suit pas : l'adresse s'écrit en clair. */}
+      {/* On paper, the link cannot be followed: the URL is written out in full. */}
       <span className="hidden break-all print:inline"> · {href}</span>
       <ExternalLink aria-hidden className="size-3 print:hidden" />
       <span className="sr-only">(nouvel onglet)</span>

@@ -1,17 +1,17 @@
-import type { Adresse } from '@/api/geocodage'
+import type { Address } from '@/api/geocoding'
 import { SuggestionItem } from './SuggestionItem'
 
 interface SuggestionListProps {
   id: string
-  suggestions: Adresse[]
+  suggestions: Address[]
   activeIndex: number
-  /** Identifiant DOM de chaque suggestion, celui que le champ annonce dans `aria-activedescendant`. */
+  /** DOM id of each suggestion, the one the field announces in `aria-activedescendant`. */
   optionId: (index: number) => string
-  onChoose: (adresse: Adresse) => void
+  onChoose: (address: Address) => void
   onHover: (index: number) => void
 }
 
-/** Liste des adresses suggérées sous le champ de recherche. */
+/** List of suggested addresses below the search field. */
 export function SuggestionList({ id, suggestions, activeIndex, optionId, onChoose, onHover }: SuggestionListProps) {
   return (
     <ul
@@ -20,13 +20,13 @@ export function SuggestionList({ id, suggestions, activeIndex, optionId, onChoos
       aria-label="Adresses suggérées"
       className="mt-1 rounded-xl border bg-background/95 p-1 shadow-lg backdrop-blur-md"
     >
-      {suggestions.map((adresse, index) => (
+      {suggestions.map((address, index) => (
         <SuggestionItem
-          key={adresse.id}
+          key={address.id}
           id={optionId(index)}
-          adresse={adresse}
+          address={address}
           active={index === activeIndex}
-          onChoose={() => onChoose(adresse)}
+          onChoose={() => onChoose(address)}
           onHover={() => onHover(index)}
         />
       ))}

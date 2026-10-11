@@ -1,27 +1,27 @@
-/** La fonction `fetch` injectée : c'est la seule seam de test des chargeurs. */
+/** The injected `fetch` function: the loaders' only test seam. */
 export type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
 export type ApiErrorKind = 'http' | 'timeout' | 'aborted' | 'network' | 'invalid-json'
 
-// Au-delà, mieux vaut afficher l'erreur du bloc et son lien vers la source que de laisser
-// un squelette indéfiniment sur une API publique lente.
+// Beyond this, better to show the block's error and its link to the source than to leave
+// a skeleton forever on a slow public API.
 const DEFAULT_TIMEOUT_MS = 15_000
 
 export interface FetchJsonOptions {
-  /** Annulation par l'appelant, typiquement le `signal` fourni par TanStack Query. */
+  /** Cancellation by the caller, typically the `signal` provided by TanStack Query. */
   signal?: AbortSignal
   timeoutMs?: number
 }
 
-/** Échec d'appel à une API publique, typé pour que chaque bloc choisisse son message. */
+/** Failed call to a public API, typed so that each block picks its own message. */
 export class ApiError extends Error {
   readonly kind: ApiErrorKind
   readonly url: string
-  /** Statut HTTP, seulement pour `kind: 'http'`. */
+  /** HTTP status, only for `kind: 'http'`. */
   readonly status?: number
 
   constructor(kind: ApiErrorKind, url: string, options: { status?: number; cause?: unknown } = {}) {
-    super(`${kind}${options.status ? ` ${options.status}` : ''} sur ${url}`, { cause: options.cause })
+    super(`${kind}${options.status ? ` ${options.status}` : ''} on ${url}`, { cause: options.cause })
     this.name = 'ApiError'
     this.kind = kind
     this.url = url
@@ -30,23 +30,23 @@ export class ApiError extends Error {
 }
 
 /**
- * GET d'une URL d'API publique et lecture de son corps JSON.
- * `T` décrit la forme brute attendue de la réponse ; elle n'est pas validée à l'exécution.
+ * GET a public API URL and read its JSON body.
+ * `T` describes the expected raw shape of the response; it is not validated at runtime.
  */
 export async function fetchJson<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T> {
   return fetchBody(fetch, url, (response) => response.json(), options)
 }
 
-/** GET d'une URL d'API publique et lecture de son corps en texte (CSV…), mêmes erreurs que `fetchJson`. */
+/** GET a public API URL and read its body as text (CSV…), same errors as `fetchJson`. */
 export async function fetchText(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<string> {
   return fetchBody(fetch, url, (response) => response.text(), options)
 }
 
 /**
- * Comme `fetchJson`, pour une API qui répond 200 avec un corps vide quand elle n'a rien à
- * dire (Géorisques `rga`) : renvoie alors `null`.
+ * Like `fetchJson`, for an API that responds 200 with an empty body when it has nothing to
+ * say (Géorisques `rga`): then returns `null`.
  */
-export async function fetchJsonOuVide<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T | null> {
+export async function fetchJsonOrEmpty<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T | null> {
   return fetchBody(
     fetch,
     url,
@@ -65,7 +65,7 @@ async function fetchBody<T>(
   { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: FetchJsonOptions,
 ): Promise<T> {
   const timeout = AbortSignal.timeout(timeoutMs)
-  // L'annulation interrompt aussi bien l'attente des en-têtes que la lecture du corps.
+  // Cancellation interrupts both waiting for the headers and reading the body.
   const failure = (cause: unknown, kind: ApiErrorKind) => {
     if (signal?.aborted) return new ApiError('aborted', url, { cause })
     if (timeout.aborted) return new ApiError('timeout', url, { cause })
@@ -78,14 +78,14 @@ async function fetchBody<T>(
       signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     })
   } catch (cause) {
-    // fetch ne distingue pas hors ligne, DNS et refus CORS : tous lèvent un TypeError.
+    // fetch does not tell offline, DNS and CORS refusal apart: all of them throw a TypeError.
     throw failure(cause, 'network')
   }
   if (!response.ok) throw new ApiError('http', url, { status: response.status })
   try {
     return await read(response)
   } catch (cause) {
-    // Une connexion coupée pendant la lecture du corps lève un TypeError, pas un SyntaxError.
+    // A connection dropped while reading the body throws a TypeError, not a SyntaxError.
     throw failure(cause, cause instanceof SyntaxError ? 'invalid-json' : 'network')
   }
 }

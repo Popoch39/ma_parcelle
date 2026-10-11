@@ -5,53 +5,53 @@ const initial = useMapStore.getState()
 
 beforeEach(() => useMapStore.setState(initial, true))
 
-describe('calques activés', () => {
-  it('affiche les ventes au départ, pas le zonage', () => {
-    expect(useMapStore.getState().calquesActifs).toEqual(['ventes'])
+describe('active overlays', () => {
+  it('shows sales by default, not zoning', () => {
+    expect(useMapStore.getState().activeOverlays).toEqual(['sales'])
   })
 
-  it('active puis désactive un calque', () => {
-    const { setCalqueActif } = useMapStore.getState()
-    setCalqueActif('zonage', true)
-    expect(useMapStore.getState().calquesActifs).toEqual(['ventes', 'zonage'])
-    setCalqueActif('zonage', false)
-    expect(useMapStore.getState().calquesActifs).toEqual(['ventes'])
+  it('activates then deactivates an overlay', () => {
+    const { setOverlayActive } = useMapStore.getState()
+    setOverlayActive('zoning', true)
+    expect(useMapStore.getState().activeOverlays).toEqual(['sales', 'zoning'])
+    setOverlayActive('zoning', false)
+    expect(useMapStore.getState().activeOverlays).toEqual(['sales'])
   })
 
-  it('masque les ventes à la demande', () => {
-    useMapStore.getState().setCalqueActif('ventes', false)
-    expect(useMapStore.getState().calquesActifs).toEqual([])
+  it('hides sales on demand', () => {
+    useMapStore.getState().setOverlayActive('sales', false)
+    expect(useMapStore.getState().activeOverlays).toEqual([])
   })
 
-  it('ne compte pas deux fois un calque activé deux fois', () => {
-    const { setCalqueActif } = useMapStore.getState()
-    setCalqueActif('zonage', true)
-    setCalqueActif('zonage', true)
-    expect(useMapStore.getState().calquesActifs).toEqual(['ventes', 'zonage'])
+  it('does not count twice an overlay activated twice', () => {
+    const { setOverlayActive } = useMapStore.getState()
+    setOverlayActive('zoning', true)
+    setOverlayActive('zoning', true)
+    expect(useMapStore.getState().activeOverlays).toEqual(['sales', 'zoning'])
   })
 
-  it('garde les calques activés quand le fond change', () => {
-    useMapStore.getState().setCalqueActif('zonage', true)
+  it('keeps the active overlays when the basemap changes', () => {
+    useMapStore.getState().setOverlayActive('zoning', true)
     useMapStore.getState().setBasemap('ortho')
-    expect(useMapStore.getState().calquesActifs).toEqual(['ventes', 'zonage'])
+    expect(useMapStore.getState().activeOverlays).toEqual(['sales', 'zoning'])
   })
 })
 
-describe('ventes survolée et ouverte', () => {
-  it('suit la vente survolée, dans la liste comme sur la carte', () => {
-    useMapStore.getState().survolerVente('v1')
-    expect(useMapStore.getState().venteSurvolee).toBe('v1')
-    useMapStore.getState().survolerVente(null)
-    expect(useMapStore.getState().venteSurvolee).toBeNull()
+describe('hovered and opened sale', () => {
+  it('tracks the hovered sale, in the list as on the map', () => {
+    useMapStore.getState().hoverSale('v1')
+    expect(useMapStore.getState().hoveredSale).toBe('v1')
+    useMapStore.getState().hoverSale(null)
+    expect(useMapStore.getState().hoveredSale).toBeNull()
   })
 
-  it("ne referme pas la vente qu'on vient d'ouvrir quand l'ancienne se ferme", () => {
-    const { ouvrirVente, fermerVente } = useMapStore.getState()
-    ouvrirVente('v1')
-    ouvrirVente('v2')
-    fermerVente('v1')
-    expect(useMapStore.getState().venteOuverte).toBe('v2')
-    fermerVente('v2')
-    expect(useMapStore.getState().venteOuverte).toBeNull()
+  it('does not close the sale just opened when the previous one closes', () => {
+    const { openSale, closeSale } = useMapStore.getState()
+    openSale('v1')
+    openSale('v2')
+    closeSale('v1')
+    expect(useMapStore.getState().openedSale).toBe('v2')
+    closeSale('v2')
+    expect(useMapStore.getState().openedSale).toBeNull()
   })
 })

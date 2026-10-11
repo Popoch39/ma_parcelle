@@ -1,75 +1,75 @@
-import { centroideOf, containsPoint } from '@/lib/geo'
+import { centroidOf, containsPoint } from '@/lib/geo'
 import { fetchJson, type Fetch } from './fetch-json'
-import type { BlocLoader } from './loader'
+import type { BlockLoader } from './loader'
 
-const LIGNES = 'https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/lines'
+const LINES = 'https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/lines'
 
-/** Étiquette d'un DPE, de A (sobre) à G. */
-export type Etiquette = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'
+/** Grade of a DPE, from A (efficient) to G. */
+export type Grade = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'
 
-export const ETIQUETTES: readonly Etiquette[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+export const GRADES: readonly Grade[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 
-/** DPE d'un logement. */
+/** DPE of a dwelling. */
 export interface Dpe {
-  numero: string
-  /** Date d'établissement, AAAA-MM-JJ. */
+  number: string
+  /** Issue date, YYYY-MM-DD. */
   date: string
-  /** Étiquette énergie. */
-  etiquetteEnergie: Etiquette | null
-  /** Étiquette climat (émissions de gaz à effet de serre). */
-  etiquetteClimat: Etiquette | null
-  /** Surface habitable du logement, en m². */
-  surface: number | null
-  adresse: string | null
-  /** Distance au centre de la parcelle en mètres, pour un DPE du voisinage. */
+  /** Energy grade. */
+  energyGrade: Grade | null
+  /** Climate grade (greenhouse gas emissions). */
+  climateGrade: Grade | null
+  /** Living area of the dwelling, in m². */
+  livingArea: number | null
+  address: string | null
+  /** Distance to the parcel center in meters, for a neighborhood DPE. */
   distance: number | null
 }
 
-/** Modèle du bloc DPE. */
-export interface DpeBloc {
-  /** Les DPE sont ceux de la parcelle, ou faute de DPE sur la parcelle, ceux de son voisinage. */
-  portee: 'parcelle' | 'voisinage'
-  dpe: Dpe[]
-  /** Nombre de DPE par étiquette énergie, de A à G (les sept, même à zéro). */
-  repartition: Array<{ etiquette: Etiquette; nombre: number }>
+/** Model of the DPE block. */
+export interface DpeBlock {
+  /** The DPEs are those of the parcel or, when the parcel has none, those of its neighborhood. */
+  scope: 'parcel' | 'neighborhood'
+  dpes: Dpe[]
+  /** Count of DPEs per energy grade, from A to G (all seven, even at zero). */
+  distribution: Array<{ grade: Grade; count: number }>
   /**
-   * Pagination arrêtée avant la fin : lignes lues sur le total annoncé par l'ADEME (DPE de
-   * l'emprise de la parcelle, ou du voisinage). Null quand tout a été lu.
+   * Pagination stopped before the end: rows read out of the total announced by ADEME (DPEs of
+   * the parcel bbox, or of the neighborhood). Null when everything was read.
    */
-  limite: { lues: number; total: number | null } | null
+  limit: { read: number; total: number | null } | null
 }
 
-/** Ligne brute de `dpe03existant/lines`, réduite aux colonnes demandées. */
-interface LigneDpe {
+/** Raw row of `dpe03existant/lines`, reduced to the requested columns. */
+interface DpeRow {
   numero_dpe: string
   date_etablissement_dpe: string
   etiquette_dpe?: string
   etiquette_ges?: string
   surface_habitable_logement?: number
   adresse_ban?: string
-  /** « lat,lon » : latitude d'abord. */
+  /** "lat,lon": latitude first. */
   _geopoint: string
   _geo_distance?: number
 }
 
-/** Page de `dpe03existant/lines`. */
-interface PageDpe {
-  /** Nombre de lignes de la requête, seulement en première page. */
+/** Page of `dpe03existant/lines`. */
+interface DpePage {
+  /** Row count of the query, only on the first page. */
   total: number | null
-  /** Page suivante, telle quelle (curseur `after`), absente à la dernière page. */
+  /** Next page, as is (`after` cursor), missing on the last page. */
   next?: string | null
-  results: LigneDpe[]
+  results: DpeRow[]
 }
 
-/** Rayon du voisinage, en mètres. */
-export const RAYON_VOISINAGE = 100
+/** Neighborhood radius, in meters. */
+export const NEIGHBORHOOD_RADIUS = 100
 
-const TAILLE_PAGE = '100'
-// Au-delà de 300 DPE, la liste n'apprend plus rien à qui regarde une parcelle, et chaque page
-// coûte une requête de plus.
-const PAGES_MAX = 3
+const PAGE_SIZE = '100'
+// Beyond 300 DPEs, the list teaches nothing more to someone looking at a parcel, and each page
+// costs one more request.
+const MAX_PAGES = 3
 
-const COLONNES = [
+const COLUMNS = [
   'numero_dpe',
   'date_etablissement_dpe',
   'etiquette_dpe',
@@ -79,66 +79,66 @@ const COLONNES = [
   '_geopoint',
 ].join(',')
 
-/** Chargeur du bloc DPE : les DPE des logements de la parcelle, ou à défaut de son voisinage, d'après l'ADEME. */
-export const loadDpe: BlocLoader<DpeBloc> = async (fetch, parcelle, { signal } = {}) => {
-  const emprise = await lignesDe(
+/** Loader of the DPE block: the DPEs of the parcel's dwellings, or failing that of its neighborhood, from ADEME. */
+export const loadDpe: BlockLoader<DpeBlock> = async (fetch, parcel, { signal } = {}) => {
+  const bbox = await rowsOf(
     fetch,
-    new URLSearchParams({ bbox: parcelle.emprise.join(','), size: TAILLE_PAGE, sort: '-date_etablissement_dpe', select: COLONNES }),
+    new URLSearchParams({ bbox: parcel.bbox.join(','), size: PAGE_SIZE, sort: '-date_etablissement_dpe', select: COLUMNS }),
     signal,
   )
-  // L'emprise déborde de la parcelle : seuls comptent les DPE dont le point tombe dedans.
-  const dansLaParcelle = emprise.lignes.filter((ligne) => containsPoint(parcelle.geometrie, pointOf(ligne)))
-  if (dansLaParcelle.length > 0) return blocOf('parcelle', dansLaParcelle.map(dpeOf), emprise.limite)
+  // The bbox overflows the parcel: only the DPEs whose point falls inside count.
+  const inParcel = bbox.rows.filter((row) => containsPoint(parcel.geometry, pointOf(row)))
+  if (inParcel.length > 0) return blockOf('parcel', inParcel.map(dpeOf), bbox.limit)
 
-  // Triés par distance par défaut : si la limite tombe, ce sont les plus lointains qui manquent.
-  const { lon, lat } = centroideOf(parcelle.geometrie)
-  const voisinage = await lignesDe(
+  // Sorted by distance by default: if the limit is hit, the farthest ones are missing.
+  const { lon, lat } = centroidOf(parcel.geometry)
+  const neighborhood = await rowsOf(
     fetch,
-    new URLSearchParams({ geo_distance: `${lon},${lat},${RAYON_VOISINAGE}m`, size: TAILLE_PAGE, select: COLONNES }),
+    new URLSearchParams({ geo_distance: `${lon},${lat},${NEIGHBORHOOD_RADIUS}m`, size: PAGE_SIZE, select: COLUMNS }),
     signal,
   )
-  return blocOf('voisinage', voisinage.lignes.map(dpeOf), voisinage.limite)
+  return blockOf('neighborhood', neighborhood.rows.map(dpeOf), neighborhood.limit)
 }
 
-function blocOf(portee: DpeBloc['portee'], dpe: Dpe[], limite: DpeBloc['limite']): DpeBloc {
-  const repartition = ETIQUETTES.map((etiquette) => ({
-    etiquette,
-    nombre: dpe.filter(({ etiquetteEnergie }) => etiquetteEnergie === etiquette).length,
+function blockOf(scope: DpeBlock['scope'], dpes: Dpe[], limit: DpeBlock['limit']): DpeBlock {
+  const distribution = GRADES.map((grade) => ({
+    grade,
+    count: dpes.filter(({ energyGrade }) => energyGrade === grade).length,
   }))
-  return { portee, dpe, repartition, limite }
+  return { scope, dpes, distribution, limit }
 }
 
-/** Lignes d'une requête, en suivant les pages jusqu'à `PAGES_MAX`. */
-async function lignesDe(fetch: Fetch, params: URLSearchParams, signal: AbortSignal | undefined) {
-  const premiere = await fetchJson<PageDpe>(fetch, `${LIGNES}?${params}`, { signal })
-  const lignes = [...premiere.results]
-  let suivante = premiere.next
-  for (let pages = 1; suivante && pages < PAGES_MAX; pages++) {
-    const page = await fetchJson<PageDpe>(fetch, suivante, { signal })
-    lignes.push(...page.results)
-    suivante = page.next
+/** Rows of a query, following the pages up to `MAX_PAGES`. */
+async function rowsOf(fetch: Fetch, params: URLSearchParams, signal: AbortSignal | undefined) {
+  const first = await fetchJson<DpePage>(fetch, `${LINES}?${params}`, { signal })
+  const rows = [...first.results]
+  let next = first.next
+  for (let pages = 1; next && pages < MAX_PAGES; pages++) {
+    const page = await fetchJson<DpePage>(fetch, next, { signal })
+    rows.push(...page.results)
+    next = page.next
   }
-  // `total` n'est donné qu'en première page (null ensuite).
-  return { lignes, limite: suivante ? { lues: lignes.length, total: premiere.total } : null }
+  // `total` is only given on the first page (null afterwards).
+  return { rows, limit: next ? { read: rows.length, total: first.total } : null }
 }
 
-function pointOf({ _geopoint }: LigneDpe) {
+function pointOf({ _geopoint }: DpeRow) {
   const [lat, lon] = _geopoint.split(',').map(Number)
   return { lon, lat }
 }
 
-function dpeOf(ligne: LigneDpe): Dpe {
+function dpeOf(row: DpeRow): Dpe {
   return {
-    numero: ligne.numero_dpe,
-    date: ligne.date_etablissement_dpe,
-    etiquetteEnergie: etiquetteOf(ligne.etiquette_dpe),
-    etiquetteClimat: etiquetteOf(ligne.etiquette_ges),
-    surface: ligne.surface_habitable_logement ?? null,
-    adresse: ligne.adresse_ban ?? null,
-    distance: ligne._geo_distance ?? null,
+    number: row.numero_dpe,
+    date: row.date_etablissement_dpe,
+    energyGrade: gradeOf(row.etiquette_dpe),
+    climateGrade: gradeOf(row.etiquette_ges),
+    livingArea: row.surface_habitable_logement ?? null,
+    address: row.adresse_ban ?? null,
+    distance: row._geo_distance ?? null,
   }
 }
 
-function etiquetteOf(valeur: string | undefined): Etiquette | null {
-  return ETIQUETTES.find((etiquette) => etiquette === valeur) ?? null
+function gradeOf(value: string | undefined): Grade | null {
+  return GRADES.find((grade) => grade === value) ?? null
 }

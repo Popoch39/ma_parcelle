@@ -2,42 +2,42 @@ import type { LayerSpecification, Map as MapLibreMap, SourceSpecification } from
 import { useEffect } from 'react'
 import { useMapStore } from '@/stores/map-store'
 
-/** Ce qu'un composant de calque pose sur la carte. */
+/** What an overlay component adds to the map. */
 export interface MapLayer {
   /**
-   * Sources dont le calque a besoin. Une source partagée (ex. les tuiles PCI) est déclarée par
-   * chaque calque qui l'utilise : le premier monté l'ajoute, le dernier démonté la retire.
+   * Sources the overlay needs. A shared source (e.g. the PCI tiles) is declared by
+   * each overlay using it: the first mounted adds it, the last unmounted removes it.
    */
   sources: Record<string, SourceSpecification>
-  /** Couches empilées dans cet ordre, au-dessus de celles déjà posées. */
+  /** Layers stacked in this order, above those already added. */
   layers: LayerSpecification[]
   /**
-   * Pose les couches sous toutes les autres plutôt qu'au-dessus : pour un fond posé comme un
-   * calque (la photo aérienne), qui peut être monté après les surcouches.
+   * Adds the layers below all the others rather than above: for a basemap added as an
+   * overlay (the aerial photo), which may be mounted after the overlays.
    */
   beneath?: boolean
   /**
-   * Pose les couches sous cette couche quand elle est sur la carte : pour une surcouche montée
-   * à la demande qui doit rester sous les parcelles et la sélection.
+   * Adds the layers below this layer when it is on the map: for an overlay mounted
+   * on demand that must stay below the parcels and the selection.
    */
   below?: string
 }
 
-/** Couche avant laquelle `addLayer` doit insérer, ou `undefined` pour poser au-dessus de tout. */
+/** Layer before which `addLayer` must insert, or `undefined` to add above everything. */
 export function insertionPoint(
   order: string[],
   { beneath, below }: Pick<MapLayer, 'beneath' | 'below'>,
 ): string | undefined {
   if (beneath) return order[0]
-  // MapLibre refuse une couche de référence absente : on pose alors au-dessus.
+  // MapLibre rejects a missing reference layer: we then add above.
   if (below && order.includes(below)) return below
   return undefined
 }
 
 /**
- * Pose un calque sur la carte du store tant que le composant est monté, et le repose après
- * chaque changement de fond. Un changement de `sources` ou `layers` (ex. un autre filtre)
- * retire puis repose le calque.
+ * Adds an overlay to the store map as long as the component is mounted, and re-adds it after
+ * each basemap change. A change of `sources` or `layers` (e.g. another filter)
+ * removes then re-adds the overlay.
  */
 export function useMapLayer({ sources, layers, beneath = false, below }: MapLayer): void {
   const map = useMapStore((state) => state.map)
@@ -54,13 +54,13 @@ export function useMapLayer({ sources, layers, beneath = false, below }: MapLaye
       }
     }
     if (isStyleReady(map)) apply()
-    // Un nouveau fond remplace tout le style et efface nos sources et couches au passage.
+    // A new basemap replaces the whole style and wipes our sources and layers along the way.
     map.on('style.load', apply)
 
     return () => {
       map.off('style.load', apply)
       const style = map.getStyle()
-      // Carte détruite, ou nouveau fond en cours de chargement : il n'y a rien à retirer.
+      // Map destroyed, or new basemap loading: there is nothing to remove.
       if (!style) return
       const ownIds = new Set(layers.map((layer) => layer.id))
       for (const id of ownIds) if (map.getLayer(id)) map.removeLayer(id)
@@ -74,8 +74,8 @@ export function useMapLayer({ sources, layers, beneath = false, below }: MapLaye
   }, [map, sources, layers, beneath, below])
 }
 
-// L'API de style lève tant qu'un fond se charge et après `map.remove()` ; `getStyle()` est le
-// seul moyen public de le savoir sans lever.
+// The style API throws while a basemap is loading and after `map.remove()`; `getStyle()` is the
+// only public way to know without throwing.
 function isStyleReady(map: MapLibreMap): boolean {
   return map.getStyle() !== undefined
 }

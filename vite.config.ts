@@ -17,9 +17,9 @@ export default defineConfig({
     },
   },
   build: {
-    // MapLibre pèse à lui seul ~1 Mo minifié (280 ko gzip) : indivisible et nécessaire dès le
-    // premier écran, il vit dans son propre chunk, gardé en cache d'un déploiement à l'autre. Le
-    // code de l'app reste bien en deçà de 500 ko ; la fiche se charge à la première sélection.
+    // MapLibre alone weighs ~1 MB minified (280 kB gzip): indivisible and needed from the first
+    // screen, it lives in its own chunk, kept in cache from one deployment to the next. The app
+    // code stays well below 500 kB; the report loads on the first selection.
     chunkSizeWarningLimit: 1100,
     rolldownOptions: {
       output: {
@@ -33,7 +33,7 @@ export default defineConfig({
     },
   },
   test: {
-    // Les worktrees d'agents vivent sous .claude/ et contiennent des copies des tests.
+    // Agent worktrees live under .claude/ and contain copies of the tests.
     exclude: [...configDefaults.exclude, '.claude/**'],
   },
 })

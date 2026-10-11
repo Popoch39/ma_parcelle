@@ -1,12 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/*
+ * Outside a layer, the MapLibre stylesheet would beat every utility: its `.maplibregl-map
+ * { position: relative }` cancelled the container's `fixed inset-0`, shrunk to 0 px high.
+ */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(base);
 
 /*
- * Le thème suit prefers-color-scheme sans JavaScript (pas de flash au chargement) :
- * chaque token est un light-dark() résolu selon color-scheme. Une classe `.light` ou
- * `.dark` sur <html> force le thème ; le variant `dark:` suit les deux mécanismes, à l'écran
- * seulement : l'impression est toujours en clair (voir plus bas).
+ * The theme follows prefers-color-scheme without JavaScript (no flash on load):
+ * each token is a light-dark() resolved by color-scheme. A `.light` or `.dark` class
+ * on <html> forces the theme; the `dark:` variant follows both mechanisms, on screen
+ * only: printing is always light (see below).
  */
 @custom-variant dark {
     @media screen {
@@ -40,9 +45,9 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
-    --color-information: var(--information);
-    --color-vigilance: var(--vigilance);
-    --color-alerte: var(--alerte);
+    --color-info: var(--info);
+    --color-caution: var(--caution);
+    --color-alert: var(--alert);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -67,16 +72,16 @@
 }
 
 /*
- * Largeur du panneau de la fiche sur desktop (`w-panneau`), et de la barre de recherche
- * au-dessus : le cadrage de la carte la lit aussi, pour laisser la parcelle hors du panneau.
+ * Width of the report panel on desktop (`w-panel`), and of the search bar above it: the
+ * map framing reads it too, to keep the parcel out from under the panel.
  */
 @theme {
-    --container-panneau: 420px;
+    --container-panel: 420px;
 }
 
 /*
- * « Outil pro épuré » : tout est neutre sauf `primary` (et `ring`), seul accent de l'app.
- * Dans la nomenclature shadcn, `accent` est le fond neutre de survol, pas une couleur d'accent.
+ * "Clean pro tool": everything is neutral except `primary` (and `ring`), the app's only accent.
+ * In shadcn naming, `accent` is the neutral hover background, not an accent color.
  */
 :root {
     color-scheme: light dark;
@@ -96,14 +101,14 @@
     --accent-foreground: light-dark(oklch(0.205 0 0), oklch(0.985 0 0));
     --destructive: light-dark(oklch(0.577 0.245 27.325), oklch(0.704 0.191 22.216));
     /*
-     * Niveaux d'alerte d'un fait (information, vigilance, alerte) : couleur du texte, de l'icône
-     * et de la bordure ; le fond en est une teinte légère (`bg-vigilance/10`). Assez foncés en
-     * clair et assez clairs en sombre pour un petit texte lisible : contraste ≥ 5:1 sur leur
-     * teinte posée sur la carte, en clair comme en sombre.
+     * Alert levels of a fact (info, caution, alert): color of the text, the icon and the
+     * border; the background is a light tint of it (`bg-caution/10`). Dark enough in light
+     * mode and light enough in dark mode for small readable text: contrast ≥ 5:1 on their
+     * tint laid over the map, in light as in dark.
      */
-    --information: light-dark(oklch(0.5 0.134 242.749), oklch(0.828 0.111 230.318));
-    --vigilance: light-dark(oklch(0.52 0.15 48), oklch(0.828 0.189 84.429));
-    --alerte: light-dark(oklch(0.505 0.213 27.518), oklch(0.704 0.191 22.216));
+    --info: light-dark(oklch(0.5 0.134 242.749), oklch(0.828 0.111 230.318));
+    --caution: light-dark(oklch(0.52 0.15 48), oklch(0.828 0.189 84.429));
+    --alert: light-dark(oklch(0.505 0.213 27.518), oklch(0.704 0.191 22.216));
     --border: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 10%));
     --input: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 15%));
     --ring: var(--primary);
@@ -132,8 +137,8 @@
 }
 
 /*
- * Impression : la fiche imprimée (`FicheImprimee`) remplace l'écran, toujours en clair, en A4
- * portrait. Sans fiche à imprimer, la page s'imprime telle quelle.
+ * Print: the printed report (`PrintedReport`) replaces the screen, always light, in A4
+ * portrait. With no report to print, the page prints as is.
  */
 @page {
     size: A4 portrait;
@@ -144,28 +149,28 @@
     :root,
     :root.dark {
         color-scheme: light;
-        /* Les étiquettes DPE et les niveaux d'alerte tiennent à leurs couleurs de fond. */
+        /* DPE grades and alert levels depend on their background colors. */
         print-color-adjust: exact;
     }
 
-    body:has(.fiche-imprimee) #root > :not(.fiche-imprimee) {
+    body:has(.printed-report) #root > :not(.printed-report) {
         display: none;
     }
 
-    /* Un bloc court ne se coupe pas entre deux pages ; un long se coupe entre ses lignes. */
-    .fiche-imprimee :is(section, figure, li, [role='note'], dl > div) {
+    /* A short block does not break across two pages; a long one breaks between its rows. */
+    .printed-report :is(section, figure, li, [role='note'], dl > div) {
         break-inside: avoid;
     }
 
-    .fiche-imprimee :is(h1, h2, h3) {
+    .printed-report :is(h1, h2, h3) {
         break-after: avoid;
     }
 }
 
 /*
- * Bulles MapLibre aux couleurs du thème : sa feuille de style les veut blanches, pointe comprise
- * (une bordure par côté d'ancrage). Préfixées par `.maplibregl-map` pour l'emporter quel que
- * soit l'ordre de chargement des deux feuilles.
+ * MapLibre popups in the theme colors: its stylesheet wants them white, tip included
+ * (one border per anchor side). Prefixed with `.maplibregl-map` to win whatever the
+ * load order of the two stylesheets.
  */
 .maplibregl-map .maplibregl-popup-content {
     background: var(--popover);

@@ -16,7 +16,7 @@ function geolocationMessage(error: GeolocationPositionError): string {
   }
 }
 
-/** « Me localiser » : centre la carte sur la position de l'appareil. */
+/** "Me localiser" (locate me): centers the map on the device position. */
 export function LocateButton() {
   const centerOn = useMapStore((state) => state.centerOn)
   const [state, setState] = useState<LocateState>({ status: 'idle' })

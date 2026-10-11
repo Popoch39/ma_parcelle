@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { insertionPoint } from './use-map-layer'
 
-const order = ['ortho', 'parcelles-clic', 'parcelles-contour', 'selection-aplat']
+const order = ['ortho', 'parcels-click', 'parcels-outline', 'selection-fill']
 
 describe('insertionPoint', () => {
-  it('pose par défaut au-dessus de tout', () => {
+  it('adds above everything by default', () => {
     expect(insertionPoint(order, {})).toBeUndefined()
   })
 
-  it('pose un fond sous toutes les couches', () => {
+  it('adds a basemap below all layers', () => {
     expect(insertionPoint(order, { beneath: true })).toBe('ortho')
     expect(insertionPoint([], { beneath: true })).toBeUndefined()
   })
 
-  it('pose sous la couche demandée quand elle est sur la carte', () => {
-    expect(insertionPoint(order, { below: 'parcelles-clic' })).toBe('parcelles-clic')
+  it('adds below the requested layer when it is on the map', () => {
+    expect(insertionPoint(order, { below: 'parcels-click' })).toBe('parcels-click')
   })
 
-  it("pose au-dessus quand la couche demandée n'est pas encore posée", () => {
-    // Après un changement de fond, les calques se reposent dans un ordre quelconque : celui
-    // qui se repose ensuite au-dessus rétablit l'empilement.
-    expect(insertionPoint(['ortho'], { below: 'parcelles-clic' })).toBeUndefined()
+  it('adds above when the requested layer is not added yet', () => {
+    // After a basemap change, overlays are re-added in any order: the one that is
+    // re-added next above restores the stacking.
+    expect(insertionPoint(['ortho'], { below: 'parcels-click' })).toBeUndefined()
   })
 })

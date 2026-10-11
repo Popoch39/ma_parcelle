@@ -5,11 +5,11 @@ import { useUiStore } from '@/stores/ui-store'
 
 const OPTIONS: { value: Theme; label: string; Icon: LucideIcon }[] = [
   { value: 'auto', label: 'Thème du système', Icon: Monitor },
-  { value: 'clair', label: 'Thème clair', Icon: Sun },
-  { value: 'sombre', label: 'Thème sombre', Icon: Moon },
+  { value: 'light', label: 'Thème clair', Icon: Sun },
+  { value: 'dark', label: 'Thème sombre', Icon: Moon },
 ]
 
-/** Choix du thème : auto, clair ou sombre. */
+/** Theme choice: auto, light or dark. */
 export function ThemeToggle() {
   const theme = useUiStore((state) => state.theme)
   const setTheme = useUiStore((state) => state.setTheme)
@@ -19,7 +19,7 @@ export function ThemeToggle() {
       size="sm"
       spacing={0}
       value={[theme]}
-      // Un second clic sur le thème actif le relâcherait : le groupe ne doit jamais rester vide.
+      // A second click on the active theme would release it: the group must never stay empty.
       onValueChange={([value]) => {
         const next = OPTIONS.find((option) => option.value === value)
         if (next) setTheme(next.value)

@@ -4,11 +4,11 @@ import { errorMessage } from './error-message'
 
 interface SectionErrorProps {
   error: unknown
-  /** Relance le chargement du bloc, typiquement le `refetch` de sa query. */
+  /** Restarts loading the block, typically the `refetch` of its query. */
   onRetry?: () => void
 }
 
-/** État d'échec d'un bloc : le message, et de quoi réessayer. Le lien vers la source reste dans `Section`. */
+/** Failure state of a block: the message, and a way to retry. The link to the source stays in `Section`. */
 export function SectionError({ error, onRetry }: SectionErrorProps) {
   return (
     <div role="alert" className="flex flex-col items-start gap-3 text-sm">

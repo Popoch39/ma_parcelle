@@ -3,21 +3,21 @@ import { useSelectionStore } from './selection-store'
 const PARAM = 'parcelle'
 
 function iduFromUrl(): string | null {
-  // Une URL retapée à la main peut être en minuscules ou garder des espaces.
+  // A URL retyped by hand may be lowercase or keep spaces.
   return new URLSearchParams(window.location.search).get(PARAM)?.trim().toUpperCase() || null
 }
 
-/** Adresse qui ouvre la fiche de cette parcelle, sur la même app que `base` (par défaut, la page courante). */
-export function urlDeLaFiche(idu: string, base = window.location.href): string {
+/** Address that opens this parcel's report, on the same app as `base` (by default, the current page). */
+export function reportUrl(idu: string, base = window.location.href): string {
   const url = new URL('?', base)
   url.searchParams.set(PARAM, idu)
   return url.href
 }
 
 /**
- * Synchronise le store sélection avec `?parcelle=<IDU>`, sans router : l'URL ouvre la fiche,
- * chaque nouvelle sélection crée une entrée d'historique, précédent et suivant la rejouent.
- * Renvoie la fonction qui arrête la synchronisation.
+ * Syncs the selection store with `?parcelle=<IDU>`, without a router: the URL opens the report,
+ * each new selection creates a history entry, back and forward replay it.
+ * Returns the function that stops the sync.
  */
 export function syncSelectionWithUrl(): () => void {
   const { select, clear } = useSelectionStore.getState()
@@ -29,7 +29,7 @@ export function syncSelectionWithUrl(): () => void {
   applyUrl()
 
   const unsubscribe = useSelectionStore.subscribe(({ idu }) => {
-    // Déjà dans l'URL : la sélection vient de l'URL elle-même (chargement ou historique).
+    // Already in the URL: the selection comes from the URL itself (load or history).
     if (idu === iduFromUrl()) return
     const url = new URL(window.location.href)
     if (idu) url.searchParams.set(PARAM, idu)

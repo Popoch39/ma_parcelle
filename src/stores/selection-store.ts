@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 
 interface SelectionState {
-  /** IDU de la parcelle dont la fiche est ouverte. Une seule parcelle à la fois. */
+  /** IDU of the parcel whose report is open. One parcel at a time. */
   idu: string | null
   /**
-   * Vrai quand la sélection ne vient pas d'un clic sur la carte (URL partagée, historique,
-   * recherche) : la carte doit alors aller jusqu'à la parcelle.
+   * True when the selection does not come from a click on the map (shared URL, history,
+   * search): the map must then go to the parcel.
    */
   reframe: boolean
   select: (idu: string, options?: { reframe?: boolean }) => void
