@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { loadParcelle } from '@/api/cadastre'
 import type { Fetch } from '@/api/fetch-json'
 import { fakeFetch, type FakeRoute } from '@/test/fake-fetch'
@@ -17,6 +17,12 @@ import parcelleAmberieuLisiere from '@/api/__fixtures__/cadastre/parcelle-amberi
 import parcelleAmberieuNaturelle from '@/api/__fixtures__/cadastre/parcelle-amberieu-01004-bi-724.json'
 import parcelleBordeaux from '@/api/__fixtures__/cadastre/parcelle-bordeaux-33063-kj-33.json'
 import parcelleParis from '@/api/__fixtures__/cadastre/parcelle-paris-75107-bq-3.json'
+import ceremaAiguesJuntes from '@/api/__fixtures__/cerema/geomutations-aigues-juntes-09001-zc-148.json'
+import ceremaBordeaux1 from '@/api/__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-1.json'
+import ceremaBordeaux2 from '@/api/__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-2.json'
+import ceremaBordeaux3 from '@/api/__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-3.json'
+import ceremaBordeaux4 from '@/api/__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-4.json'
+import ceremaBordeaux5 from '@/api/__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-5.json'
 import aucunObjet from '@/api/__fixtures__/gpu/aucun-objet.json'
 import servitudesAmberieuNaturelle from '@/api/__fixtures__/gpu/assiette-sup-s-amberieu-01004-bi-724.json'
 import documentAmberieu from '@/api/__fixtures__/gpu/document-amberieu-01004.json'
@@ -81,7 +87,19 @@ const bordeaux = [
   { match: 'bdnb/donnees', body: bdnbBordeaux },
   { match: 'bdnb/metadonnees/info', body: bdnbInfo },
   { match: 'altimetrie', body: altiBordeaux },
+  // Les pages 2 à 5 d'abord : la première page est la seule URL sans `page=`.
+  ...[ceremaBordeaux2, ceremaBordeaux3, ceremaBordeaux4, ceremaBordeaux5].map((body, i) => ({
+    match: new RegExp(`apidf-preprod\\.cerema\\.fr/.*page=${i + 2}&`),
+    body,
+  })),
+  { match: 'apidf-preprod.cerema.fr', body: ceremaBordeaux1 },
 ]
+
+beforeAll(() => {
+  // Les ventes retenues sont celles des cinq dernières années.
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-10-11T12:00:00+02:00'))
+})
 
 describe('synthèse de la fiche', () => {
   it('traduit en clair les faits de chaque bloc, dans l’ordre des blocs, chacun avec son niveau d’alerte', async () => {
@@ -99,6 +117,15 @@ describe('synthèse de la fiche', () => {
           detail:
             'Souvent un secteur sauvegardé dont le plan n’est pas en ligne : la mairie indique les règles qui s’y appliquent.',
         },
+        // Seuls les appartements ont assez de ventes simples : quatre maisons ne font pas une médiane.
+        {
+          id: 'prix-appartement',
+          libelle: 'Prix médian au m², appartements',
+          valeur: '4 125 €/m² · 7 ventes',
+          niveau: 'information',
+          detail:
+            'Médiane des ventes simples d’appartements à moins de 500 m depuis 2021 : un repère du voisinage, pas une estimation de la parcelle.',
+        },
         {
           id: 'bati',
           libelle: 'Bâti',
@@ -114,7 +141,7 @@ describe('synthèse de la fiche', () => {
     const synthese = await syntheseDe(fakeFetch(bordeaux), '33063000KJ0033', { enAttente: ['urbanisme'] })
 
     expect(synthese.enCours).toBe(true)
-    expect(synthese.faits.map(({ id }) => id)).toEqual(['surface', 'bati'])
+    expect(synthese.faits.map(({ id }) => id)).toEqual(['surface', 'prix-appartement', 'bati'])
   })
 
   it('compose la synthèse sans le bloc en erreur, et explique la zone du PLU et le périmètre ABF', async () => {
@@ -155,13 +182,14 @@ describe('synthèse de la fiche', () => {
     })
   })
 
-  it('ne dit rien d’un bloc qui n’a rien à signaler, comme un terrain sans bâti recensé', async () => {
+  it('ne dit rien d’un bloc qui n’a rien à signaler, comme un terrain sans bâti recensé ou trop peu de ventes autour', async () => {
     const fetch = fakeFetch([
       { match: 'cadastre/parcelle', body: parcelleTerrainNu },
       ...gpu({ municipality: municipalityAiguesJuntes }),
       { match: 'bdnb/donnees', body: bdnbTerrainNu },
       { match: 'bdnb/metadonnees/info', body: bdnbInfo },
       { match: 'altimetrie', body: altiTerrainNu },
+      { match: 'apidf-preprod.cerema.fr', body: ceremaAiguesJuntes },
     ])
 
     const synthese = await syntheseDe(fetch, '09001000ZC0148')
