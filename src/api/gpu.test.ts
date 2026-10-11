@@ -7,10 +7,12 @@ import parcelleAmberieuLisere from './__fixtures__/cadastre/parcelle-amberieu-01
 import parcelleAmberieuEffleuree from './__fixtures__/cadastre/parcelle-amberieu-01004-ab-233.json'
 import parcelleAmberieuCheval from './__fixtures__/cadastre/parcelle-amberieu-01004-ab-250.json'
 import parcelleBordeaux from './__fixtures__/cadastre/parcelle-bordeaux-33063-kj-33.json'
+import parcelleIleDOlonne from './__fixtures__/cadastre/parcelle-ile-d-olonne-85112-aa-139.json'
 import parcelleParis from './__fixtures__/cadastre/parcelle-paris-75107-bq-3.json'
 import parcellePleaux from './__fixtures__/cadastre/parcelle-pleaux-15153-0f-262.json'
 import aucunObjet from './__fixtures__/gpu/aucun-objet.json'
 import servitudesBordeaux from './__fixtures__/gpu/assiette-sup-s-bordeaux-33063-kj-33.json'
+import servitudesLineairesIleDOlonne from './__fixtures__/gpu/assiette-sup-l-ile-d-olonne-85112-aa-139.json'
 import servitudesParis from './__fixtures__/gpu/assiette-sup-s-paris-75107-bq-3.json'
 import documentPleaux from './__fixtures__/gpu/document-pleaux-15153-0f-262.json'
 import municipalityAiguesJuntes from './__fixtures__/gpu/municipality-aigues-juntes-09001-zc-148.json'
@@ -29,7 +31,15 @@ import zonesAmberieuLisere from './__fixtures__/gpu/zone-urba-amberieu-01004-ab-
 import zonesAmberieuCheval from './__fixtures__/gpu/zone-urba-amberieu-01004-ab-250.json'
 import zonesParis from './__fixtures__/gpu/zone-urba-paris-75107-bq-3.json'
 
-type Endpoint = 'zone-urba' | 'secteur-cc' | 'document' | 'municipality' | 'prescription-surf' | 'assiette-sup-s'
+type Endpoint =
+  | 'zone-urba'
+  | 'secteur-cc'
+  | 'document'
+  | 'municipality'
+  | 'prescription-surf'
+  | 'assiette-sup-s'
+  | 'assiette-sup-l'
+  | 'assiette-sup-p'
 
 /** Faux fetch de l'API Carto GPU : un endpoint non fourni répond comme sans objet. */
 function gpu(responses: Partial<Record<Endpoint, unknown>>) {
@@ -40,6 +50,8 @@ function gpu(responses: Partial<Record<Endpoint, unknown>>) {
     'municipality',
     'prescription-surf',
     'assiette-sup-s',
+    'assiette-sup-l',
+    'assiette-sup-p',
   ]
   return fakeFetch(
     endpoints.map((endpoint) => ({ match: `/api/gpu/${endpoint}?`, body: responses[endpoint] ?? aucunObjet })),
@@ -296,6 +308,22 @@ describe('loadUrbanisme', () => {
     expect(urbanisme.perimetreAbf).toBeNull()
   })
 
+  it('liste aussi les servitudes linéaires, comme l’alignement d’une voie qui longe la parcelle', async () => {
+    const parcelle = await parcelleDe(parcelleIleDOlonne)
+
+    const urbanisme = await loadUrbanisme(gpu({ 'assiette-sup-l': servitudesLineairesIleDOlonne }), parcelle)
+
+    expect(urbanisme.servitudes).toEqual([
+      {
+        id: 'EL7-200071165-01-07-01',
+        code: 'EL7',
+        categorie: 'Alignement des voies publiques',
+        nom: null,
+        geometrie: servitudesLineairesIleDOlonne.features[0].geometry,
+      },
+    ])
+  })
+
   it('interroge zone, secteur, document, commune, prescriptions et servitudes par la géométrie de la parcelle, jamais les actes de servitude', async () => {
     const parcelle = await parcelleDe(parcelleParis)
     const fetch = gpu(paris)
@@ -304,6 +332,8 @@ describe('loadUrbanisme', () => {
 
     const urls = fetch.calls.map((call) => new URL(call))
     expect(urls.map(({ pathname }) => pathname).sort()).toEqual([
+      '/api/gpu/assiette-sup-l',
+      '/api/gpu/assiette-sup-p',
       '/api/gpu/assiette-sup-s',
       '/api/gpu/document',
       '/api/gpu/municipality',

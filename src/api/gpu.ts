@@ -1,4 +1,4 @@
-import type { MultiPolygon } from 'geojson'
+import type { MultiLineString, MultiPoint, MultiPolygon } from 'geojson'
 import { mesureCouverture } from '@/lib/couverture'
 import type { Parcelle } from './cadastre'
 import { fetchJson, type Fetch } from './fetch-json'
@@ -66,8 +66,11 @@ export interface Servitude {
   categorie: string
   /** Ce que la servitude protège ou dessert, ex. « Hôtel des Invalides » ; null si non renseigné. */
   nom: string | null
-  geometrie: MultiPolygon
+  /** Surface (abords d'un monument), ligne (alignement d'une voie) ou point. */
+  geometrie: EmpriseServitude
 }
+
+export type EmpriseServitude = MultiPolygon | MultiLineString | MultiPoint
 
 /**
  * Alerte « périmètre ABF » : la parcelle est aux abords d'au moins un monument historique, où
@@ -87,8 +90,8 @@ export interface Urbanisme {
   perimetreAbf: PerimetreAbf | null
 }
 
-interface FeatureCollection<Properties> {
-  features: Array<{ geometry: MultiPolygon; properties: Properties }>
+interface FeatureCollection<Properties, Geometrie = MultiPolygon> {
+  features: Array<{ geometry: Geometrie; properties: Properties }>
 }
 
 /** Ce que zones de PLU (`zone-urba`) et secteurs de carte communale (`secteur-cc`) ont en commun. */
@@ -200,12 +203,12 @@ export async function loadUrbanisme(
   { signal }: LoadOptions = {},
 ): Promise<Urbanisme> {
   const geom = encodeURIComponent(JSON.stringify(parcelle.geometrie))
-  const get = <Properties>(endpoint: string, timeoutMs?: number) =>
-    fetchJson<FeatureCollection<Properties>>(fetch, `${API_CARTO_GPU}/${endpoint}?geom=${geom}`, {
+  const get = <Properties, Geometrie = MultiPolygon>(endpoint: string, timeoutMs?: number) =>
+    fetchJson<FeatureCollection<Properties, Geometrie>>(fetch, `${API_CARTO_GPU}/${endpoint}?geom=${geom}`, {
       signal,
       timeoutMs,
     })
-  const [zonesPlu, secteurs, documents, communes, prescriptions, servitudes] = await Promise.all([
+  const [zonesPlu, secteurs, documents, communes, prescriptions, surfaces, lignes, points] = await Promise.all([
     get<ZoneUrbaProperties>('zone-urba'),
     get<SecteurCcProperties>('secteur-cc'),
     get<DocumentProperties>('document'),
@@ -214,6 +217,8 @@ export async function loadUrbanisme(
     // d'un mégaoctet à Paris, plusieurs secondes même sur une bonne connexion.
     get<PrescriptionProperties>('prescription-surf', 30_000),
     get<ServitudeProperties>('assiette-sup-s'),
+    get<ServitudeProperties, MultiLineString>('assiette-sup-l'),
+    get<ServitudeProperties, MultiPoint>('assiette-sup-p'),
   ])
   const partDe = mesureCouverture(parcelle.geometrie)
   const zones = [
@@ -230,15 +235,18 @@ export async function loadUrbanisme(
   return {
     reglementation: reglementationDe(parcelle, zones, documents, communes),
     prescriptions: prescriptionsDe(prescriptions, partDe),
-    ...servitudesDe(servitudes, partDe),
+    ...servitudesDe([
+      ...surfaces.features.filter(({ geometry }) => partDe(geometry) >= PART_SIGNIFICATIVE),
+      // Une ligne ou un point n'a pas de surface à mesurer : l'intersection faite par l'API fait foi.
+      ...lignes.features,
+      ...points.features,
+    ]),
   }
 }
 
 function servitudesDe(
-  servitudes: FeatureCollection<ServitudeProperties>,
-  partDe: (geometrie: MultiPolygon) => number,
+  touchees: Array<{ geometry: EmpriseServitude; properties: ServitudeProperties }>,
 ): Pick<Urbanisme, 'servitudes' | 'perimetreAbf'> {
-  const touchees = servitudes.features.filter(({ geometry }) => partDe(geometry) >= PART_SIGNIFICATIVE)
   const abords = touchees.filter(({ properties }) => estAbordsMonument(properties))
   const monuments = abords.flatMap(({ properties }) => (properties.nomsuplitt ? [reEncode(properties.nomsuplitt)] : []))
   return {
@@ -252,7 +260,7 @@ function estAbordsMonument({ suptype, typeass }: ServitudeProperties): boolean {
   return suptype.toUpperCase() === 'AC1' && /abords/i.test(typeass ?? '')
 }
 
-function toServitude(geometrie: MultiPolygon, properties: ServitudeProperties): Servitude {
+function toServitude(geometrie: EmpriseServitude, properties: ServitudeProperties): Servitude {
   const code = properties.suptype.toUpperCase()
   const monument = code === 'AC1' && !estAbordsMonument(properties)
   return {

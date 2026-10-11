@@ -80,7 +80,15 @@ import sismiqueParis7e from '@/api/__fixtures__/georisques/zonage-sismique-75107
 import { assemblerSynthese, type EtatBloc } from './synthese'
 import { CONTRIBUTIONS } from './contributions'
 
-type EndpointGpu = 'zone-urba' | 'secteur-cc' | 'document' | 'municipality' | 'prescription-surf' | 'assiette-sup-s'
+type EndpointGpu =
+  | 'zone-urba'
+  | 'secteur-cc'
+  | 'document'
+  | 'municipality'
+  | 'prescription-surf'
+  | 'assiette-sup-s'
+  | 'assiette-sup-l'
+  | 'assiette-sup-p'
 
 /** Routes de l'API Carto GPU : un endpoint non fourni répond comme sans objet. */
 function gpu(responses: Partial<Record<EndpointGpu, unknown>>): FakeRoute[] {
@@ -91,6 +99,8 @@ function gpu(responses: Partial<Record<EndpointGpu, unknown>>): FakeRoute[] {
     'municipality',
     'prescription-surf',
     'assiette-sup-s',
+    'assiette-sup-l',
+    'assiette-sup-p',
   ]
   return endpoints.map((endpoint) => ({ match: `/api/gpu/${endpoint}?`, body: responses[endpoint] ?? aucunObjet }))
 }

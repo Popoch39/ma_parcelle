@@ -1,4 +1,5 @@
-import type { FeatureCollection, MultiPolygon } from 'geojson'
+import type { FeatureCollection } from 'geojson'
+import type { EmpriseServitude } from '@/api/gpu'
 import { useMapLayer } from '@/map/use-map-layer'
 import { useUrbanisme } from '@/queries/urbanisme'
 import { useMapStore } from '@/stores/map-store'
@@ -25,7 +26,7 @@ function ServitudeOverlay({ idu, id }: { idu: string; id: string }) {
   const couleur = COULEUR_SERVITUDE[useColorScheme()]
   const { data } = useUrbanisme(idu)
   const servitude = data?.servitudes.find((candidate) => candidate.id === id)
-  const collection: FeatureCollection<MultiPolygon> = {
+  const collection: FeatureCollection<EmpriseServitude> = {
     type: 'FeatureCollection',
     features: servitude ? [{ type: 'Feature', geometry: servitude.geometrie, properties: {} }] : [],
   }
@@ -46,6 +47,13 @@ function ServitudeOverlay({ idu, id }: { idu: string; id: string }) {
         source: SOURCE_ID,
         layout: { 'line-join': 'round' },
         paint: { 'line-color': couleur, 'line-width': 2 },
+      },
+      {
+        id: 'servitude-point',
+        type: 'circle',
+        source: SOURCE_ID,
+        filter: ['in', ['geometry-type'], ['literal', ['Point', 'MultiPoint']]],
+        paint: { 'circle-color': couleur, 'circle-radius': 6, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5 },
       },
     ],
   })
