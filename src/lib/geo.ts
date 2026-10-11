@@ -54,6 +54,17 @@ export function squareAround(point: LonLat, demiCote: number): Polygon {
   }
 }
 
+/** Cercle de `rayon` mètres autour d'un point, approché par un polygone de `sommets` côtés. */
+export function circleAround(point: LonLat, rayon: number, sommets = 32): Polygon {
+  const dLat = rayon / METRES_PAR_DEGRE
+  const dLon = dLat / Math.cos((point.lat * Math.PI) / 180)
+  const anneau = Array.from({ length: sommets }, (_, k) => {
+    const angle = (2 * Math.PI * k) / sommets
+    return [point.lon + dLon * Math.cos(angle), point.lat + dLat * Math.sin(angle)]
+  })
+  return { type: 'Polygon', coordinates: [[...anneau, anneau[0]]] }
+}
+
 /** Rectangle englobant d'un polygone ou d'un multipolygone. */
 export function empriseOf(geometrie: Polygon | MultiPolygon): Emprise {
   const anneaux = geometrie.type === 'Polygon' ? geometrie.coordinates : geometrie.coordinates.flat()

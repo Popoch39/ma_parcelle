@@ -11,6 +11,7 @@ import {
 import type { Fetch } from '../fetch-json'
 import type { BlocLoader, LoadOptions } from '../loader'
 import { cerema } from './cerema'
+import { datagouv } from './datagouv'
 import type { SourceVentesId, VentesSource, Voisinage } from './source'
 
 /** Modèle du bloc Ventes. */
@@ -29,7 +30,7 @@ export interface VentesBloc {
 }
 
 /** Sources dans l'ordre où on les essaie : la suivante ne sert que si la précédente échoue. */
-const SOURCES: readonly VentesSource[] = [cerema]
+const SOURCES: readonly VentesSource[] = [cerema, datagouv]
 
 /** Chargeur du bloc Ventes : les ventes DVF du voisinage de la parcelle et leur prix médian au m². */
 export const loadVentes: BlocLoader<VentesBloc> = async (fetch, parcelle, { signal } = {}) => {

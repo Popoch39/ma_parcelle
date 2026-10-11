@@ -3,13 +3,20 @@ import { fakeFetch, type FakeRoute } from '@/test/fake-fetch'
 import { loadParcelle } from '../cadastre'
 import parcelleAiguesJuntes from '../__fixtures__/cadastre/parcelle-aigues-juntes-09001-zc-148.json'
 import parcelleBordeaux from '../__fixtures__/cadastre/parcelle-bordeaux-33063-kj-33.json'
+import parcelleParis from '../__fixtures__/cadastre/parcelle-paris-75107-bq-3.json'
+import divisionAiguesJuntes from '../__fixtures__/cadastre/division-voisinage-aigues-juntes-09001-zc-148.json'
+import divisionParis from '../__fixtures__/cadastre/division-voisinage-paris-75107-bq-3.json'
 import ceremaAiguesJuntes from '../__fixtures__/cerema/geomutations-aigues-juntes-09001-zc-148.json'
+import ceremaRefus from '../__fixtures__/cerema/geomutations-emprise-trop-grande-403.json'
+import dvfAiguesJuntesZC from '../__fixtures__/datagouv/dvf-section-09001000ZC.csv?raw'
+import dvfParisBQ from '../__fixtures__/datagouv/dvf-section-75107000BQ-aucune-vente.csv?raw'
+import dvfParisCX from '../__fixtures__/datagouv/dvf-section-75115000CX.csv?raw'
 import bordeauxPage1 from '../__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-1.json'
 import bordeauxPage2 from '../__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-2.json'
 import bordeauxPage3 from '../__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-3.json'
 import bordeauxPage4 from '../__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-4.json'
 import bordeauxPage5 from '../__fixtures__/cerema/geomutations-bordeaux-33063-kj-33-page-5.json'
-import { loadVentes } from '.'
+import { loadVentes, type VentesBloc } from '.'
 
 const parcelle = (idu: string, body: unknown) => loadParcelle(fakeFetch([{ match: 'cadastre/parcelle', body }]), idu)
 
@@ -123,6 +130,97 @@ describe('loadVentes', () => {
     expect(ventes.medianes).toEqual({
       maison: { prixM2: null, ventes: 1 },
       appartement: { prixM2: null, ventes: 0 },
+    })
+  })
+
+  describe('quand l’API Cerema ne répond pas', () => {
+    /** Le Cerema refuse, le cadastre donne deux sections du voisinage, dont une sans aucune vente. */
+    const secoursParis: FakeRoute[] = [
+      { match: 'apidf-preprod.cerema.fr', status: 403, body: ceremaRefus },
+      { match: 'apicarto.ign.fr/api/cadastre/division?', body: divisionParis },
+      { match: 'dvf-api.data.gouv.fr/dvf/csv/?section=75107000BQ', body: dvfParisBQ },
+      { match: 'dvf-api.data.gouv.fr/dvf/csv/?section=75115000CX', body: dvfParisCX },
+    ]
+
+    it('bascule sur dvf-api.data.gouv, interrogée section par section avec le code de l’arrondissement', async () => {
+      const fetch = fakeFetch(secoursParis)
+
+      const ventes = await loadVentes(fetch, await parcelle('75107000BQ0003', parcelleParis))
+
+      expect(ventes.source).toBe('datagouv')
+      expect(fetch.calls.slice(1, 2)).toEqual([expect.stringMatching(/^https:\/\/apicarto\.ign\.fr\/api\/cadastre\/division\?geom=/)])
+      expect(fetch.calls.slice(2)).toEqual([
+        'https://dvf-api.data.gouv.fr/dvf/csv/?section=75107000BQ',
+        'https://dvf-api.data.gouv.fr/dvf/csv/?section=75115000CX',
+      ])
+    })
+
+    it('normalise les ventes du CSV : une vente groupée de 3 appartements et 2 dépendances, un local professionnel et des dépendances seules sont exclus', async () => {
+      const ventes = await loadVentes(fakeFetch(secoursParis), await parcelle('75107000BQ0003', parcelleParis))
+
+      expect(
+        ventes.ventes.map(({ id, date, type, prix, surfaceBatie, surfaceTerrain, prixM2, exclusion }) => ({
+          id,
+          date,
+          type,
+          prix,
+          surfaceBatie,
+          surfaceTerrain,
+          prixM2: prixM2 && Math.round(prixM2),
+          exclusion,
+        })),
+      ).toEqual([
+        { id: '2023-1345647', date: '2023-03-23', type: 'appartement', prix: 635000, surfaceBatie: 57, surfaceTerrain: null, prixM2: 11140, exclusion: null },
+        // Lots 19, 20 et 21 : 28 + 32 + 37 m² d'appartements, et deux dépendances.
+        { id: '2023-1343823', date: '2023-02-28', type: 'appartements', prix: 860000, surfaceBatie: 97, surfaceTerrain: null, prixM2: 8866, exclusion: 'vente-groupee' },
+        { id: '2022-1686198', date: '2022-11-17', type: 'local', prix: 448000, surfaceBatie: 55, surfaceTerrain: null, prixM2: 8145, exclusion: 'local-professionnel' },
+        { id: '2022-1682236', date: '2022-09-27', type: 'dependance', prix: 221680, surfaceBatie: null, surfaceTerrain: null, prixM2: null, exclusion: 'dependance' },
+      ])
+      expect(ventes.medianes.appartement).toEqual({ prixM2: null, ventes: 1 })
+    })
+
+    it('décrit les mêmes ventes que le Cerema, en comptant une fois le local ou la culture que le CSV répète', async () => {
+      const parcelleRurale = await parcelle('09001000ZC0148', parcelleAiguesJuntes)
+      const resume = ({ ventes }: VentesBloc) =>
+        ventes.map(({ date, type, prix, surfaceBatie, surfaceTerrain, exclusion }) => ({
+          date,
+          type,
+          prix,
+          surfaceBatie,
+          surfaceTerrain,
+          exclusion,
+        }))
+
+      const principale = await loadVentes(fakeFetch([{ match: 'apidf-preprod.cerema.fr', body: ceremaAiguesJuntes }]), parcelleRurale)
+      const secours = await loadVentes(
+        fakeFetch([
+          { match: 'apidf-preprod.cerema.fr', status: 403, body: ceremaRefus },
+          { match: 'apicarto.ign.fr/api/cadastre/division?', body: divisionAiguesJuntes },
+          { match: 'dvf-api.data.gouv.fr/dvf/csv/?section=09001000ZC', body: dvfAiguesJuntesZC },
+        ]),
+        parcelleRurale,
+      )
+
+      expect(secours.source).toBe('datagouv')
+      // Les deux maisons de 71 et 114 m² répètent la culture « sols » de 138 m² de leur parcelle.
+      expect(resume(secours)).toEqual([
+        { date: '2025-05-05', type: 'maison', prix: 158000, surfaceBatie: 153, surfaceTerrain: 894, exclusion: null },
+        { date: '2024-12-23', type: 'terrain', prix: 5000, surfaceBatie: null, surfaceTerrain: 55, exclusion: 'terrain' },
+        { date: '2024-11-29', type: 'maisons', prix: 169000, surfaceBatie: 185, surfaceTerrain: 2920, exclusion: 'vente-groupee' },
+      ])
+      expect(resume(secours)).toEqual(resume(principale))
+    })
+
+    it('échoue avec l’erreur de la source principale si le secours échoue aussi', async () => {
+      const fetch = fakeFetch([
+        { match: 'apidf-preprod.cerema.fr', status: 403, body: ceremaRefus },
+        { match: 'apicarto.ign.fr/api/cadastre/division?', body: divisionParis },
+        { match: 'dvf-api.data.gouv.fr', status: 502, body: '<html><body>502 Bad Gateway</body></html>' },
+      ])
+
+      const chargement = loadVentes(fetch, await parcelle('75107000BQ0003', parcelleParis))
+
+      await expect(chargement).rejects.toMatchObject({ name: 'ApiError', kind: 'http', status: 403 })
     })
   })
 })

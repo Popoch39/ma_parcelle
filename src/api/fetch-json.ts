@@ -33,10 +33,20 @@ export class ApiError extends Error {
  * GET d'une URL d'API publique et lecture de son corps JSON.
  * `T` décrit la forme brute attendue de la réponse ; elle n'est pas validée à l'exécution.
  */
-export async function fetchJson<T>(
+export async function fetchJson<T>(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<T> {
+  return fetchBody(fetch, url, (response) => response.json(), options)
+}
+
+/** GET d'une URL d'API publique et lecture de son corps en texte (CSV…), mêmes erreurs que `fetchJson`. */
+export async function fetchText(fetch: Fetch, url: string, options: FetchJsonOptions = {}): Promise<string> {
+  return fetchBody(fetch, url, (response) => response.text(), options)
+}
+
+async function fetchBody<T>(
   fetch: Fetch,
   url: string,
-  { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: FetchJsonOptions = {},
+  read: (response: Response) => Promise<T>,
+  { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: FetchJsonOptions,
 ): Promise<T> {
   const timeout = AbortSignal.timeout(timeoutMs)
   // L'annulation interrompt aussi bien l'attente des en-têtes que la lecture du corps.
@@ -57,7 +67,7 @@ export async function fetchJson<T>(
   }
   if (!response.ok) throw new ApiError('http', url, { status: response.status })
   try {
-    return await response.json()
+    return await read(response)
   } catch (cause) {
     // Une connexion coupée pendant la lecture du corps lève un TypeError, pas un SyntaxError.
     throw failure(cause, cause instanceof SyntaxError ? 'invalid-json' : 'network')
